@@ -77,17 +77,17 @@ vec2 getMx() {
 }
 
 void main() {
-    vec3 c = vec3(0.316, 0.800, 0.980);
+    vec3 c = vec3(0.143,0.752,0.980);
     // vec3 c = vec3(0.925,0.514,0.917);
     vec2 st = getSt();
     vec2 uv = gl_FragCoord.xy * 0.0105;
     float n = perlin(uv);
     vec3 c1 = c * c * c * 0.2;
-    vec3 c2 = c * 1.3;
+    vec3 c2 = c * 1.8;
     vec3 color = mix(c1, c2, n * n + st.x * 0.4 - st.y * 0.05);
     
     vec3 g = vec3(0.0, 0.0, 0.5) * 0.1;
     color += g * smoothstep(fract(n), 0.4, 0.44);
     
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(mix(c, color, 0.5), 1.0);
 }
