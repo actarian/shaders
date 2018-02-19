@@ -3,5 +3,16 @@
         "0": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/cloud-1.png",
         "1": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/cloud-2.jpg",
         "2": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/noise.png"
+    },
+    "glsl-canvas.uniforms": {
+        "u_pow": [
+            0.5,
+            1.0
+        ],
+        "u_color": [
+            0.0,
+            0.6,
+            0.9
+        ]
     }
 }

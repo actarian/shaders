@@ -212,9 +212,9 @@ vec4 raymarch(vec3 ro, vec3 rd, vec3 bgcol, vec2 px) {
 	float t = 0.0; // 0.05 * texture2D(u_texture_0, px&255, 0).x;
 
     MARCH(5, map5);
-    // MARCH(5, map4);
-    // MARCH(5, map3);
-    // MARCH(5, map2);
+    MARCH(5, map4);
+    MARCH(5, map3);
+    MARCH(5, map2);
 
     return clamp(sum, 0.0, 1.0);
 }
