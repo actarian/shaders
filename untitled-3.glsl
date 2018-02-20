@@ -144,11 +144,6 @@ bool between(float duration) {
     return (p >= 0.0 && p <= 1.0);
 }
 
-float tween(float a, float b, float v) { return a + (b - a) * v; }
-vec2 tween(vec2 a, vec2 b, float v) { return a + (b - a) * v; }
-vec3 tween(vec3 a, vec3 b, float v) { return a + (b - a) * v; }
-vec4 tween(vec4 a, vec4 b, float v) { return a + (b - a) * v; }
-
 vec3 repeat(vec3 p, vec3 r) { return mod(p, r) -0.5 * r; }
 vec2 repeat(vec2 p, vec2 r) { return mod(p, r) -0.5 * r; }
 
@@ -171,19 +166,19 @@ void animate(vec2 p, float diff) {
     if (between(1.0)) {
         v = easeOutBounce(animation.pow);
         p = p + vec2(-0.5 + v, 0.0);
-        object.color = tween(BLUE, RED, v);
+        object.color = mix(BLUE, RED, v);
     }
 
     if (between(3.0)) {
         v = easeOutQuad(animation.pow);
         p = p + vec2(0.5 * cos(v * 2.0 * TWO_PI), 0.5 * sin(v * 2.0 * TWO_PI));
-        object.color = tween(RED, YELLOW, v);
+        object.color = mix(RED, YELLOW, v);
     }
     
     if (between(1.0)) {
         v = easeOutBounce(animation.pow);
         p = p + vec2(0.5 - v, 0.0);
-        object.color = tween(YELLOW, BLUE, v);
+        object.color = mix(YELLOW, BLUE, v);
     }
 
     // p *= rotate2d(u_time);
