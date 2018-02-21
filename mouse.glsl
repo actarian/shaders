@@ -20,7 +20,7 @@ vec2 getSt() {
 	st.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
     // centering
     st -= 0.5;
-    st *= vec2(-1.0, 1.0);
+    st *= vec2(1.0, -1.0);
 	return st;
 }
 
@@ -39,6 +39,6 @@ void main() {
     vec2 st = getSt();
     vec2 mx = getMx();
     vec3 color = vec3(1.0, 1.0, 1.0);
-    color = mix(vec3(0.0), color, circle(st + mx, 0.005));
+    color = mix(vec3(0.0), color, circle(st - mx, 0.005));
     gl_FragColor = vec4(color, 1.0);
 }
