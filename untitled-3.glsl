@@ -10,7 +10,7 @@ uniform vec3 u_color;
 
 /***   c o n s t a n t s   ***/
 
-#define st vec2((gl_FragCoord.x / u_resolution.x - 0.5) * -1.0, ((gl_FragCoord.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * 1.0)
+#define st vec2((gl_FragCoord.x / u_resolution.x - 0.5) * 1.0, ((gl_FragCoord.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
 #define mx vec2((u_mouse.x / u_resolution.x - 0.5) * 1.0, ((u_mouse.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
 
 #define PI_TWO			1.570796326794897
@@ -243,6 +243,8 @@ void animate(vec2 p, float diff) {
     // p *= rotate2d(u_time);
     
     vec2 w = cellular2x2(p / (v * fract(u_time * 0.1))) * 10.0; // fract(u_time)
+
+
     object.distance = smoothstep(w.x, w.x * p.y + 0.3, p.y * p.y / w.y);
     object.color.r += object.color.g * p.x * w.y + 0.1;
 

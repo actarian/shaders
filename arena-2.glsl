@@ -5,6 +5,19 @@
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
+uniform float u_mix;
+
+#define st vec2((gl_FragCoord.x / u_resolution.x - 0.5) * 1.0, ((gl_FragCoord.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
+#define mx vec2((u_mouse.x / u_resolution.x - 0.5) * 1.0, ((u_mouse.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
+// #define mxy smoothstep(0.01, 0.11, length(mx - st)) + sin(u_time) * 0.1
+
+float ripple() {    	
+	float x = (mx.x - st.x);
+	float y = (mx.y - st.y);		
+	float r = -(x * x + y * y);
+	float z = 1.0 + 0.3 * sin((r + u_time * 0.01) / 0.0013);	
+	return mix(0.0, z, 0.5 - length(st - mx));
+}
 
 float random(float x) { 
     return fract(x * 0.3142536475869708); // fract(sin(x) * 10000.0);          
@@ -20,6 +33,7 @@ vec2 nw(vec2 p) { return vec2(floor(p.x), ceil(p.y)); }
 vec2 ne(vec2 p) { return vec2(ceil(p.x), ceil(p.y)); }
 
 float snoise(vec2 p) {
+    p += ripple();
     vec2 interp = smoothstep(0., 1., fract(p));
     float s = mix(noise(sw(p)), noise(se(p)), interp.x);
     float n = mix(noise(nw(p)), noise(ne(p)), interp.x);
@@ -28,7 +42,7 @@ float snoise(vec2 p) {
 
 float fbm(vec2 p) {
     float x = 0.;
-    x += snoise(p      );
+    x += snoise(p);
     // x += snoise(p * 2.0 ) / 1.0;
     x += snoise(p * 4.0 ) / 2.0;
     x += snoise(p * 8.0 ) / 4.0;
@@ -61,33 +75,26 @@ float circle(in vec2 p, in float r){
     );
 }
 
-vec2 getSt() {
-	vec2 st = gl_FragCoord.xy / u_resolution.xy;
-	st.y *= u_resolution.y / u_resolution.x;
-	st.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
-	return st;
-}
-
-vec2 getUv(vec2 st) {
+vec2 getUv() {
 	return -1.0 + st * 2.0;
-}
-
-vec2 getMx() {
-	return -1.0 + u_mouse / u_resolution.xy * 2.0;
 }
 
 void main() {
     vec3 c = vec3(0.143,0.752,0.980);
-    // vec3 c = vec3(0.925,0.514,0.917);
-    vec2 st = getSt();
+    
     vec2 uv = gl_FragCoord.xy * 0.0105;
-    float n = perlin(uv);
+    
+    float n = perlin(uv + mx * 0.5);
     vec3 c1 = c * c * c * 0.2;
     vec3 c2 = c * 1.8;
     vec3 color = mix(c1, c2, n * n + st.x * 0.4 - st.y * 0.05);
-    
+
     vec3 g = vec3(0.0, 0.0, 0.5) * 0.1;
     color += g * smoothstep(fract(n), 0.4, 0.44);
     
-    gl_FragColor = vec4(mix(c, color, 0.5), 1.0);
+    color = mix(color, vec3(0.0, 0.0, 0.0), clamp(ripple(), 0.0, 1.0));
+
+    // color = mix(vec3(1.0, 0.0, 0.0), vec3(1.0), m);
+    
+    gl_FragColor = vec4(mix(c, color, u_mix), 1.0);
 }
