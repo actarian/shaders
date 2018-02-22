@@ -41,8 +41,7 @@ void main(){
     // x += x * sin(iTime * 7.) * 0.2;
     // 1x += y * cos(iTime * 7.) * 0.2;
     // y += x * cos(iTime * 7.) * 0.2;
-    
-    
+        
     y += y - magic;
     
     // float band = Band(x, -0.2, 0.2, 0.001);

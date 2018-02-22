@@ -9,7 +9,7 @@ uniform float u_mix;
 uniform vec2 u_trails[10];
 uniform vec2 u_trail_0;
 
-vec2 getCoord(in vec2 p) {
+vec2 coord(in vec2 p) {
 	p = p / u_resolution.xy;
     // correct aspect ratio
 	p.y *= u_resolution.y / u_resolution.x;
@@ -19,12 +19,8 @@ vec2 getCoord(in vec2 p) {
     p *= vec2(1.0, -1.0);
 	return p;
 }
-#define st getCoord(gl_FragCoord.xy)
-#define mx getCoord(u_mouse)
-
-// #define st vec2((gl_FragCoord.x / u_resolution.x - 0.5) * 1.0, ((gl_FragCoord.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
-// #define mx vec2((u_mouse.x / u_resolution.x - 0.5) * 1.0, ((u_mouse.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
-// #define mxy smoothstep(0.01, 0.11, distance(mx, st)) + sin(u_time) * 0.1
+#define st coord(gl_FragCoord.xy)
+#define mx coord(u_mouse)
 
 float ripple(vec2 p) {
 	float x = (st.x - p.x);
@@ -32,14 +28,6 @@ float ripple(vec2 p) {
 	float r = -(x * x + y * y);
     float z = 1.0 + 0.3 * sin((r + u_time * 0.1) * 100.0);	
 	return mix(0.0, z, 0.5 - distance(st, p));
-}
-
-float ripple() {    	
-	float x = (mx.x - st.x);
-	float y = (mx.y - st.y);		
-	float r = -(x * x + y * y);
-	float z = 1.0 + 0.3 * sin((r + u_time * 0.01) / 0.0013);	
-	return mix(0.0, z, 0.5 - distance(st, mx));
 }
 
 float random(float x) { 
@@ -104,8 +92,8 @@ void main() {
     float r = 0.0;
     for (int i = 0; i < 1; i++) {
         // r += circle(st - mx, 0.001);
-        // r += circle(st - getCoord(u_trails[i]), 0.01);
-        r += ripple(getCoord(u_trails[i]));
+        // r += circle(st - coord(u_trails[i]), 0.01);
+        r += ripple(coord(u_trails[i]));
     }
     
     vec3 c = vec3(0.143,0.752,0.980);
