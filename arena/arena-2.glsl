@@ -21,13 +21,16 @@ vec2 coord(in vec2 p) {
 }
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
+#define px 1.0 / u_resolution.x
 
-float ripple(vec2 p) {
-	float x = (st.x - p.x);
-	float y = (st.y - p.y);		
-	float r = -(x * x + y * y);
-    float z = 1.0 + 0.3 * sin((r + u_time * 0.1) * 100.0);	
-	return mix(0.0, z, 0.5 - distance(st, p));
+float ripple(vec2 p, float r) {
+    vec2 dx = st - mx - p;
+    float t = u_time * 0.5;
+	float s = p.x * p.x * (1.0 - dx.x) + p.y * p.y * (1.0 - dx.y);
+    s /= px * 20.0;
+    float z = sin((t - s) * r * 0.05);	
+    float c = 1.0 - smoothstep(0.0, r * px, length(p) * 2.0);
+    return mix(0.0, z, c);
 }
 
 float random(float x) { 
@@ -90,21 +93,14 @@ vec2 getUv() {
 void main() {
     
     float r = 0.0;
-    for (int i = 0; i < 1; i++) {
-        // r += circle(st - mx, 0.001);
-        // r += circle(st - coord(u_trails[i]), 0.01);
-        r += ripple(coord(u_trails[i]));
+    for (int i = 0; i < 10; i++) {
+        r += ripple(st - coord(u_trails[i]), 30.0 * float(10 - i));
     }
-    
+
     vec3 c = vec3(0.143,0.752,0.980);
-    /*
-    c = mix(c, vec3(0.0), r);
-    gl_FragColor = vec4(c, 1.0);
-    return;
-    */
     vec2 uv = gl_FragCoord.xy * 0.0105;
     uv += r;
-    float n = perlin(uv + mx * 0.5);
+    float n = perlin(uv + mx * 0.1);
     vec3 c1 = c * c * c * 0.2;
     vec3 c2 = c * 1.8;
     vec3 color = mix(c1, c2, n * n + st.x * 0.4 - st.y * 0.05);
