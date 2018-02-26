@@ -23,16 +23,6 @@ vec2 coord(in vec2 p) {
 #define mx coord(u_mouse)
 #define px 1.0 / u_resolution.x
 
-float ripple(vec2 p, float r) {
-    vec2 dx = st - mx - p;
-    float t = u_time * 0.5;
-	float s = p.x * p.x * (1.0 - dx.x) + p.y * p.y * (1.0 - dx.y);
-    s /= px * 20.0;
-    float z = sin((t - s) * r * 0.05);	
-    float c = 1.0 - smoothstep(0.0, r * px, length(p) * 2.0);
-    return mix(0.0, z, c);
-}
-
 float random(float x) { 
     return fract(x * 0.3142536475869708); // fract(sin(x) * 10000.0);          
 }
@@ -86,6 +76,16 @@ float circle(vec2 p, float r) {
     );
 }
 
+float ripple(vec2 p, float r) {
+    vec2 dx = st - mx - p;
+    float t = u_time * 2.0 + r * 0.02;
+	float s = p.x * p.x * (1.0 - dx.x) + p.y * p.y * (1.0 - dx.y);
+    s /= px * 10.0;
+    float z = sin((t - s) * 4.0);	
+    float c = 1.0 - smoothstep(0.0, r * px, length(p) * 2.0);
+    return clamp(mix(0.0, z, c), 0.0, 1.0);
+}
+
 vec2 getUv() {
 	return -1.0 + st * 2.0;
 }
@@ -94,7 +94,7 @@ void main() {
     
     float r = 0.0;
     for (int i = 0; i < 10; i++) {
-        r += ripple(st - coord(u_trails[i]), 30.0 * float(10 - i));
+        r += 0.8 * ripple(st - coord(u_trails[i]), 40.0 * float(10 - i));
     }
 
     vec3 c = vec3(0.143,0.752,0.980);

@@ -11,7 +11,7 @@ vec2 coord(in vec2 p) {
 	p.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
     // centering
     p -= 0.5;
-    p *= vec2(1.0, -1.0);
+    p *= vec2(-1.0, 1.0);
 	return p;
 }
 #define st coord(gl_FragCoord.xy)

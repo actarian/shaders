@@ -9,10 +9,6 @@ uniform sampler2D u_texture_0;
 uniform vec3 u_color;
 
 /***   c o n s t a n t s   ***/
-
-#define st vec2((gl_FragCoord.x / u_resolution.x - 0.5) * 1.0, ((gl_FragCoord.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
-#define mx vec2((u_mouse.x / u_resolution.x - 0.5) * 1.0, ((u_mouse.y / u_resolution.y * u_resolution.y / u_resolution.x) + ((u_resolution.x - u_resolution.y) / u_resolution.x / 2.0) - 0.5) * -1.0)
-
 #define PI_TWO			1.570796326794897
 #define PI				3.141592653589793
 #define TWO_PI			6.283185307179586
@@ -21,32 +17,19 @@ uniform vec3 u_color;
 #define BLUE            vec3(0.0, 0.0, 1.0)
 #define YELLOW          vec3(1.0, 1.0, 0.0)
 
-/*
-vec2 getSt() {
-	vec2 st = gl_FragCoord.xy / u_resolution.xy;
+vec2 coord(in vec2 p) {
+	p = p / u_resolution.xy;
     // correct aspect ratio
-	st.y *= u_resolution.y / u_resolution.x;
-	st.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
+	p.y *= u_resolution.y / u_resolution.x;
+	p.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
     // centering
-    st -= 0.5;
-    st *= vec2(-1.0, 1.0);
-	return st;
+    p -= 0.5;
+    p *= vec2(-1.0, 1.0);
+	return p;
 }
-
-vec2 getMx() {
-	vec2 mx = u_mouse / u_resolution.xy;
-    // correct aspect ratio
-	mx.y *= u_resolution.y / u_resolution.x;
-	mx.y += (u_resolution.x - u_resolution.y) / u_resolution.x / 2.0;
-    // centering
-    mx -= 0.5;
-    mx *= vec2(1.0, -1.0);
-	return mx;
-}
-
-#define st getSt()
-#define mx getMx()
-*/
+#define st coord(gl_FragCoord.xy)
+#define mx coord(u_mouse)
+#define px 1.0 / u_resolution.x
 
 /***   m a t h   ***/
 
@@ -55,35 +38,6 @@ mat2 rotate2d(float a){
 }
 
 /***   s h a p e s   ***/
-
-float plot(vec2 p, float pct) {
-  return smoothstep(pct - 0.002, pct, p.y) - smoothstep(pct, pct + 0.002, p.y);
-}
-
-float polygon(vec2 p, int sides) {
-    // p -= 0.5;
-    // Angle and radius from the current pixel
-    float a = atan(p.x, p.y) + PI;
-    float r = TWO_PI / float(sides);
-    // Shaping function that modulate the distance
-    float d = cos(floor(0.5 + a / r) * r - a) * length(p);
-    return 1.0 - smoothstep(0.1, 0.1001, d);
-}
-
-float rect(vec2 p, vec2 size) {
-    vec2 s2 = size / -2.0;
-    vec2 bl = smoothstep(vec2(s2 - 0.001), vec2(s2), p);
-    vec2 tr = smoothstep(vec2(s2 + 1.0), vec2(s2 + 1.0 + 0.001), 1.0 - p);
-    return bl.x * bl.y * tr.x * tr.y;
-}
-
-float circle(vec2 p, float r) {
-    return 1.0 - smoothstep(
-        r - (r * 0.1),
-        r + (r * 0.1),
-        dot(p, p) * 4.0
-    );
-}
 
 vec2 move(vec2 p, float d) {
     return p + vec2(
@@ -177,8 +131,9 @@ vec4 permute(vec4 x) {
 vec2 cellular2x2(vec2 P) {
 #define K 0.142857142857 // 1/7
 #define K2 0.0714285714285 // K/2
-#define jitter 0.8 // jitter 1.0 makes F1 wrong more often
-	vec2 Pi = mod289(floor(P));
+    // #define jitter 0.8 // jitter 1.0 makes F1 wrong more often
+    float jitter = 0.7 + 0.2 * sin(u_time);
+    vec2 Pi = mod289(floor(P));
  	vec2 Pf = fract(P);
 	vec4 Pfx = Pf.x + vec4(-0.5, -1.5, -0.5, -1.5);
 	vec4 Pfy = Pf.y + vec4(-0.5, -0.5, -1.5, -1.5);
@@ -209,44 +164,23 @@ vec2 cellular2x2(vec2 P) {
 /////////////////
 
 void animate(vec2 p, float diff) {
-    vec3 c = vec3(0.0); // color
-
-    p *= 1.5;
-    // p = tile(p, 2.0);
+    // p *= 10.0;
     
     /*
-    p *= 10.0;
-    p = repeat(p, vec2(1.5, 0.5));
+    vec2 w = cellular2x2(p + u_time);
+    object.distance = smoothstep(0.0, 100.0, p.x * p.y / w.x * w.y);
+    // object.distance = p.y * p.y / w.y;
     */
     
-    totalTime(6.0, diff);
-
-    float v; // assume values between 0.0 && 1.0
-    if (between(1.0)) {
-        v = easeBounceOut(animation.pow);
-        p = p + vec2(-0.5 + v, 0.0);
-        object.color = mix(BLUE, RED, v);
-    }
-
-    if (between(4.0)) {
-        v = easeElasticOut(animation.pow);
-        p = p + vec2(0.5 * cos(v * 2.0 * PI), 0.5 * sin(v * 2.0 * PI));
-        object.color = mix(RED, YELLOW, v);
-    }
+    vec2 c = cellular2x2(st * 10.0);
+    // vec2 c = cellular2x2(st * (10.0 + cos(u_time) * 9.0) + u_time);
     
-    if (between(1.0)) {
-        v = easeBounceOut(animation.pow);
-        p = p + vec2(0.5 - v, 0.0);
-        object.color = mix(YELLOW, BLUE, v);
-    }
+    // float d = smoothstep(0.2, 0.21, c.x);
+	float d = smoothstep(0.0, 0.9, c.x);
 
-    // p *= rotate2d(u_time);
-    
-    vec2 w = cellular2x2(p / (v * fract(u_time * 0.1))) * 10.0; // fract(u_time)
+    object.distance = 1.0 - d;
 
-
-    object.distance = smoothstep(w.x, w.x * p.y + 0.3, p.y * p.y / w.y);
-    object.color.r += object.color.g * p.x * w.y + 0.1;
+    object.color = vec3(1.0);;
 
     // object.distance = circle(p, 0.01 + 0.01 * v);
     // object.distance = rect(p, vec2(0.1));
@@ -254,68 +188,11 @@ void animate(vec2 p, float diff) {
     // object.distance = circle(vec2(length(p)), 2.1);
 }
 
-/*
-const int MAX_MARCHING_STEPS = 255;
-const float MIN_DIST = 0.0;
-const float MAX_DIST = 100.0;
-const float EPSILON = 0.0001;
-
-float sphereSDF(vec3 samplePoint) {
-    return length(samplePoint) - 1.0;
-}
-
-float sceneSDF(vec3 samplePoint) {
-    return sphereSDF(samplePoint);
-}
-
-float shortestDistanceToSurface(vec3 eye, vec3 marchingDirection, float start, float end) {
-    float depth = start;
-    for (int i = 0; i < MAX_MARCHING_STEPS; i++) {
-        float dist = sceneSDF(eye + depth * marchingDirection);
-        if (dist < EPSILON) {
-			return depth;
-        }
-        depth += dist;
-        if (depth >= end) {
-            return end;
-        }
-    }
-    return end;
-}
-
-vec3 rayDirection(float fieldOfView, vec2 p, vec2 size) {
-    vec2 xy = p - size / 2.0;
-    float z = size.y / tan(radians(fieldOfView) / 2.0);
-    return normalize(vec3(xy, -z));
-}
-*/
-
 void main() {
     vec3 color = vec3(0.1);
     
-    // color = vec3(p.x, p.y, 1.0);
-
     animate(st, 0.0);
     color = mix(color, object.color, object.distance); // drawing object on color
-
-
-
-    /*
-    animate(st * rotate2d(-u_time * 0.1), 0.4);
-    color = mix(color, object.color, object.distance); // drawing object on color
-    */
-
-/*
-    vec3 dir = rayDirection(120.0, gl_FragCoord.xy, u_resolution.xy);
-    vec3 eye = vec3(0.0, 0.0, 5.0);
-    float dist = shortestDistanceToSurface(eye, dir, MIN_DIST, MAX_DIST);
-
-    if (dist > MAX_DIST - EPSILON) {
-        // Didn't hit anything
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-		return;
-    }
-*/
 
     gl_FragColor = vec4(color, 1.0);
 }
