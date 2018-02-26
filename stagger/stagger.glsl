@@ -14,9 +14,20 @@ uniform vec3 u_color;
 #define PI				3.141592653589793
 #define TWO_PI			6.283185307179586
 
+#define BLACK           vec3(0.0, 0.0, 0.0)
+#define WHITE           vec3(1.0, 1.0, 1.0)
 #define RED             vec3(1.0, 0.0, 0.0)
+#define GREEN           vec3(0.0, 1.0, 0.0)
 #define BLUE            vec3(0.0, 0.0, 1.0)
 #define YELLOW          vec3(1.0, 1.0, 0.0)
+#define CYAN            vec3(0.0, 1.0, 1.0)
+#define MAGENTA         vec3(1.0, 0.0, 1.0)
+#define ORANGE          vec3(1.0, 0.5, 0.0)
+#define PURPLE          vec3(1.0, 0.0, 0.5)
+#define LIME            vec3(0.5, 1.0, 0.0)
+#define ACQUA           vec3(0.0, 1.0, 0.5)
+#define VIOLET          vec3(0.5, 0.0, 1.0)
+#define AZUR            vec3(0.0, 0.5, 1.0)
 
 vec2 coord(in vec2 p) {
 	p = p / u_resolution.xy;
@@ -56,10 +67,12 @@ bool between(float duration) {
     return (p >= 0.0 && p <= 1.0);
 }
 
+/***   t i l i n g   ***/
+vec2 tile(in vec2 p, float size) {
+    return fract(mod(p + size / 2.0, size)) - (size / 2.0);
+}
 vec3 repeat(vec3 p, vec3 r) { return mod(p, r) -0.5 * r; }
 vec2 repeat(vec2 p, vec2 r) { return mod(p, r) -0.5 * r; }
-
-// vec2 tile(vec2 p, float zoom) { p *= zoom; return fract(p); }
 
 /***   e a s i n g s   ***/
 /* Easing Bounce Out equation */
@@ -90,6 +103,57 @@ float easeElasticOut(float t) {
 
 /***   s h a p e s   ***/
 
+float circleD(vec2 p, float size) {
+    return 1.0 - length(p) * 2.0;
+}
+
+float circle(vec2 p, float size) {
+    size *= px;
+    return smoothstep(size - px, size + px, circleD(p, size));
+}
+
+float rectD(vec2 p, vec2 size) {
+    size *= px;
+    size /= -2.0;
+    vec2 bl = p - 1.0;
+    vec2 tr = 1.0 - p;
+    return bl.x * bl.y * tr.x * tr.y;
+}
+
+float rect(vec2 p, vec2 size) {
+    size *= px;
+    size /= -2.0;
+    vec2 bl = smoothstep(vec2(size - 0.001), vec2(size), p);
+    vec2 tr = smoothstep(vec2(size + 1.0), vec2(size + 1.0 + 0.001), 1.0 - p);
+    return bl.x * bl.y * tr.x * tr.y;
+}
+
+float roundrect(in vec2 p, in vec2 size, in float radius, in float t) {
+    radius *= px * 2.0;;
+    t *= px;
+    float d = length(max(abs(p), size / 2.0) - size / 2.0) - radius;
+    return 1.0 - smoothstep(t - px, t + px, abs(d));
+}
+
+float polygonD(vec2 p, float size, int sides) {
+    // Angle and radius from the current pixel
+    float a = atan(p.x, p.y) + PI;
+    float r = TWO_PI / float(sides);
+    // Shaping function that modulate the distance
+    float d = cos(floor(0.5 + a / r) * r - a) * length(p);
+    return 1.0 - d * 2.0;
+}
+
+float polygon(vec2 p, float size, int sides) {
+    size *= px;
+    // Angle and radius from the current pixel
+    float a = atan(p.x, p.y) + PI;
+    float r = TWO_PI / float(sides);
+    // Shaping function that modulate the distance
+    float d = cos(floor(0.5 + a / r) * r - a) * length(p);
+    return 1.0 - smoothstep(size - px, size + px, d * 2.0);
+}
+
 float plot(vec2 p, float t, float a) {
     t *= px / 2.0;
     p *= rotate2d(a);
@@ -102,36 +166,6 @@ float plot(vec2 p, float t, float a) {
 }
 float plot(vec2 p, float t) { return plot (p, t, 0.0); }
 float plot(vec2 p) { return plot (p, 1.0, 0.0); }
-
-float polygon(vec2 p, float size, int sides) {
-    size *= px;
-    // Angle and radius from the current pixel
-    float a = atan(p.x, p.y) + PI;
-    float r = TWO_PI / float(sides);
-    // Shaping function that modulate the distance
-    float d = cos(floor(0.5 + a / r) * r - a) * length(p);
-    return 1.0 - smoothstep(size - px, size + px, d * 2.0);
-}
-
-float circle(vec2 p, float size) {
-    size *= px;
-    return 1.0 - smoothstep(size - px, size + px, length(p) * 2.0);
-}
-
-float rect(vec2 p, vec2 size) {
-    size *= px;
-    size /= -2.0;
-    vec2 bl = smoothstep(vec2(size - 0.001), vec2(size), p);
-    vec2 tr = smoothstep(vec2(size + 1.0), vec2(size + 1.0 + 0.001), 1.0 - p);
-    return bl.x * bl.y * tr.x * tr.y;
-}
-
-vec2 move(vec2 p, float d) {
-    return p + vec2(
-        cos(u_time * d) * 0.2, 
-        sin(u_time * d) * 0.2
-    );
-}
 
 /////////////////
 
@@ -156,56 +190,39 @@ void animate(vec2 p, float diff) {
         v = easeBounceOut(animation.pow);
         p += vec2(mix(-r, r, v), 0.0);
         object.color = mix(BLUE, RED, v);
-        object.distance = circle(p, 30.0);
+        object.distance = circleD(p, 30.0);
     }
 
     if (between(4.0)) {
         v = easeElasticOut(animation.pow);
         p = p + vec2(r * cos(v * 2.0 * PI), r * sin(v * 2.0 * PI));
         object.color = mix(RED, YELLOW, v);
-        object.distance = rect(p, vec2(30.0));
+        object.distance = rectD(p, vec2(30.0));
     }
     
     if (between(1.0)) {
         v = easeBounceOut(animation.pow);
         p += vec2(mix(r, -r, v), 0.0);
         object.color = mix(YELLOW, BLUE, v);
-        object.distance = polygon(p, 30.0, 5);
+        object.distance = polygonD(p, 30.0, 5);
     }
 
     // object.distance = circle(p, 30.0 + 20.0 * v);
 }
 
-float _line(vec2 a, vec2 b, vec2 p) {
+float _line(vec2 a, vec2 b, vec2 p, float size) {
     vec2 ba = b - a;
     vec2 perp = vec2(ba.y, -ba.x);
     vec2 dir = a - p;
     float f = abs(dot(normalize(perp), dir));
-    return smoothstep(f - px, f + px, px * 2.0);
+    return smoothstep(size * px + px, size * px - px, f);
 }
 
-float __line(vec2 p1, vec2 p2, vec2 p) {
+float __line(vec2 p1, vec2 p2, vec2 p, float size) {
     float a = p1.y - p2.y;
     float b = p2.x - p1.x;
     float f = abs(a * p.x + b * p.y + p1.x * p2.y - p2.x * p1.y) / sqrt(a * a + b * b);
-    return smoothstep(f - px, f + px, 0.1);
-}
-
-float __line(vec2 a, vec2 b) {
-	vec2 ba = b - a;
-	float h = clamp(dot(ba, a) / dot(ba, ba), 0.0, 1.0);
-	vec2 v = a + (ba * -h);
-    float f = dot(v, v);
-    float size = 1.0;
-    return smoothstep(size + px, size - px, f * 10000.0);
-}
-
-float liner(vec2 a, vec2 b, float t) {
-    vec2 p = (b + a) / 2.0;
-    float angle = PI_TWO - atan(b.x - a.x, a.y - b.y);
-    vec2 size = vec2(distance(a, b) * u_resolution.x, t);
-    p *= rotate2d(angle);
-    return rect(p, size);
+    return smoothstep(size * px + px, size * px - px, f);
 }
 
 float line(in vec2 a, in vec2 b, float size) {
@@ -217,54 +234,58 @@ float line(in vec2 a, in vec2 b, float size) {
     return smoothstep(size * px + px, size * px - px, f);
 }
 
-vec2 tile(in vec2 p, float size) {
-    // Here is where the offset is happening
-    p += (size / 2.0);
-    p = mod(p, size);
-    return fract(p) - (size / 2.0);
+float liner(vec2 a, vec2 b, float t) {
+    vec2 p = (b + a) / 2.0;
+    float angle = PI_TWO - atan(b.x - a.x, a.y - b.y);
+    vec2 size = vec2(distance(a, b) * u_resolution.x, t);
+    p *= rotate2d(angle);
+    return rect(p, size);
 }
 
-float grid(inout vec3 color) {
+float grid() {
     float f = 0.0;
     f += plot(mod(st, 0.1));
     f += plot(mod(st, 0.1), 1.0, PI_TWO);
-
-    color = mix(color, vec3(0.0, 1.0, 0.5), f * 0.1);
+    f *= 0.1;
 
     float g = 0.0;
     vec2 p = tile(st, 0.5);
     g += line(p + vec2(-0.025, 0.0), p + vec2(0.025, 0.0), 1.0);
     g += line(p + vec2(0.0, -0.025), p + vec2(0.0, 0.025), 1.0);
 
-    color = mix(color, vec3(0.0, 1.0, 0.5), g);
     return f + g;
 }
 
 void main() {
-    vec3 color = vec3(0.1);
-    // color = vec3(p.x, p.y, 1.0);
+    vec3 color = BLACK;
+    
+    color = mix(color, GREEN, grid());
 
+    color = mix(color, MAGENTA, 
+        roundrect((st + vec2(0.1, 0.1)) * rotate2d(u_time), vec2(0.4, 0.2), 5.0, 1.0)
+    );
+
+    /*
     animate(st, 0.0);
     color = mix(color, object.color, object.distance); // drawing object on color
 
-    grid(color);
-
-    color = mix(color, vec3(0.0, 0.0, 1.0), line(
+    color = mix(color, BLUE, line(
         st + vec2(0.1, 0.0), 
         st + vec2(-0.2, 0.3),
         1.0
     )); // drawing object on color
 
-    color = mix(color, vec3(1.0, 0.0, 1.0), rect(
+    color = mix(color, MAGENTA, rect(
         st + vec2(0.4, 0.4), 
         st + vec2(20.0, 20.0) 
     )); // drawing object on color
     
-    color = mix(color, vec3(1.0, 1.0, 0.0), liner(
+    color = mix(color, YELLOW, liner(
         st + vec2(0.0, -0.0), 
         st + vec2(0.3, 0.3),
         2.0
     )); // drawing object on color
-    
+    */
+
     gl_FragColor = vec4(color, 1.0);
 }
