@@ -53,6 +53,10 @@ vec2 pos(in float x) { return pos(x, x); }
 vec2 pos(in vec2 p) { return pos(p.x, p.y); }
 float pix(in float x) { return x * rx; }
 vec2 pix(in float x, in float y) { return vec2(x * rx, y * rx); }
+float swing (float size) { return (1.0 + cos(u_time)) / 2.0 * pix(size); }
+vec2 swing (in float x, in float y) { return (1.0 + cos(u_time)) / 2.0 * pix(x, y); }
+vec3 draw(in sampler2D t, in vec2 pos, in vec2 size) { vec2 s = size / 1.0; s.x *= -1.0; return texture2D(t, pos / s + 0.5).rgb; }
+
 /***   m a t h   ***/
 
 mat2 rotate2d(float a){
@@ -183,12 +187,6 @@ float grid(in float size) {
     return d + g;
 }
 
-vec3 draw(in sampler2D t, in vec2 pos, in vec2 size) {
-    vec2 s = size / 1.0;
-    
-    return texture2D(t, uv * size - pos).rgb;
-}
-
 void animate(in float diff) {
     vec3 c = vec3(0.0);
 
@@ -278,9 +276,8 @@ void main() {
         line(pos(-50.0 * cos(u_time), 0.0), pos(-150.0 * sin(u_time), 150.0), pix(5.0))
     );
 
-    color = mix(color, draw(u_texture_0, pos(0.0, 125.0), pix(150.0, 150.0)), 
+    color = mix(color, draw(u_texture_0, pos(0.0, 125.0), pix(150.0, 150.0) + swing(100.0)), 
         roundrect(pos(0.0, 125.0), pix(150.0, 50.0), pix(5.0))
-        // rect(st, vec2(2.0, 2.0))
     );
 
     float c = 0.0; // cos(u_time * 60.0) * 0.05;
