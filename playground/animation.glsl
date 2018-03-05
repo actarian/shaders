@@ -135,13 +135,13 @@ float poly(in vec2 p, in float size, in int sides, in float t) {
 }
 
 float rect(in vec2 p, in vec2 size) {
-    float d = length(max(abs(p) - size / 2.0, 0.0));
-    return 1.0 - smoothstep(0.0, 0.0 + rx * 2.0, d);
+    float d = max(abs(p.x / size.x), abs(p.y / size.y));
+    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
 }
 float rect(in vec2 p, in vec2 size, in float t) {
-    size /= 2.0;
-    float d = length(max(abs(p), size - t) - size + t) - t - rx;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+    float a = abs(max(abs(p.x / (size.x + t)), abs(p.y / (size.y + t))));
+    float b = abs(max(abs(p.x / (size.x - t)), abs(p.y / (size.y - t))));
+    return smoothstep(0.5 - rx, 0.5 + rx, b) - smoothstep(0.5 - rx, 0.5 + rx, a);
 }
 
 float roundrect(in vec2 p, in vec2 size, in float radius) {
@@ -153,6 +153,27 @@ float roundrect(in vec2 p, in vec2 size, in float radius, in float t) {
     radius *= 2.0; size /= 2.0; size -= radius;
     float d = length(max(abs(p), size) - size) - radius;
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+}
+
+float star(in vec2 p, in float size, in int sides) {    
+    float seg = atan(p.y, p.x) / TWO_PI * float(sides);
+    float a = ((floor(seg) + 0.5) / float(sides) + mix(size, -size, step(0.5, fract(seg)))) * TWO_PI;
+    float d = abs(dot(vec2(cos(a), sin(a)), p));
+    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
+}
+float star(in vec2 p, in float size, in int sides, float t) {    
+    float seg = atan(p.y, p.x) / TWO_PI * float(sides);
+    float s = 0.5;
+    float a = ((floor(seg) + s) / float(sides) + mix(size + t / 2.0, -size - t / 2.0, step(s, fract(seg)))) * TWO_PI;
+    float d = abs(dot(vec2(cos(a), sin(a)), p)) - size / 2.0;
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+}
+
+float spiral(in vec2 p, in float turn) {    
+    float r = dot(p, p);
+    float a = atan(p.y, p.x);
+    float d = abs(sin(fract(log(r) * (turn / 5.0) + a * 0.159)));
+    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
 }
 
 float grid(in float size) {
@@ -338,17 +359,19 @@ void main() {
 
     object.color = WHITE;
 
-    totalTime(10.5);
+    totalTime(12.0);
         
-    if (between(0.25)) {
-        object.distance = circle(st, 0.2, 0.02);
+    if (between(0.5)) {
+        v = easeElasticOut(animation.pow);
+        object.distance = circle(st, 0.1 + 0.1 * v);
     }
 
-    if (between(0.25)) {
-        object.distance = rect(st * rotate2d(PI_TWO / 2.0), vec2(0.2), 0.04);
+    if (between(0.5, -0.25)) {
+        v = easeElasticOut(animation.pow);
+        object.distance = rect(st * rotate2d(PI_TWO / 2.0 * v), vec2(0.3), 0.04);
     }
 
-    if (between(0.25)) {
+    if (between(0.25, -0.25)) {
         object.distance = circle(st, 0.2 + 1.3 * animation.pow, 0.1) * (1.0 - animation.pow);
     }
 
@@ -375,12 +398,12 @@ void main() {
     if (between(1.0, -0.8)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(st + vec2(mix(-0.5, 0.5, v), -0.1), st + vec2(mix(-0.5, 0.5, v2), -0.1), 0.004);
+        object.distance += line(st + vec2(mix(-0.5, 0.5, v), -0.1), st + vec2(mix(-0.5, 0.5, v2), -0.1), 0.008);
     }
     if (between(1.0, -0.6)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(st + vec2(mix(-0.5, 0.5, v), 0.1), st + vec2(mix(-0.5, 0.5, v2), 0.1), 0.004);
+        object.distance += line(st + vec2(mix(-0.5, 0.5, v), 0.1), st + vec2(mix(-0.5, 0.5, v2), 0.1), 0.012);
     }
 
     if (between(1.0, 0.25)) {
@@ -425,12 +448,22 @@ void main() {
     if (between(1.0, -0.8)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(st + vec2(-0.1, mix(-0.5, 0.5, v)), st + vec2(-0.1, mix(-0.5, 0.5, v2)), 0.004);
+        object.distance += line(st + vec2(-0.1, mix(-0.5, 0.5, v)), st + vec2(-0.1, mix(-0.5, 0.5, v2)), 0.008);
     }
     if (between(1.0, -0.6)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(st + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.004);
+        object.distance += line(st + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.012);
+    }
+
+    if (between(1.0)) {
+        v = easeCircularIn(animation.pow);
+        object.distance = star(st, 0.5, 5 + int(animation.pow * 40.0), 0.04);
+    }
+
+    if (between(0.5)) {
+        v = easeCircularIn(animation.pow);
+        object.distance = star(st + vec2(0.0, mix(0.0, 0.5, v)), 0.5, 45, 0.04) * (1.0 - animation.pow);
     }
 
     color = mix(color, object.color, object.distance);
