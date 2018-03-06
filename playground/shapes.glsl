@@ -114,12 +114,9 @@ float pie(in vec2 p, in float s, in float e, in float size, in float t) {
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
-float plot(in vec2 p, in float t, in float a) {
-    p *= rotate2d(a);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
+float plot(vec2 p, float y, float t){
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.y + y));
 }
-float plot(in vec2 p, in float t) { return plot (p, t, 0.0); }
-float plot(in vec2 p) { return plot (p, 1.0, 0.0); }
 
 float poly(in vec2 p, in float size, in int sides) {
     float a = atan(p.x, p.y) + PI;
@@ -143,6 +140,13 @@ float rect(in vec2 p, in vec2 size, in float t) {
     float b = abs(max(abs(p.x / (size.x - t)), abs(p.y / (size.y - t))));
     return smoothstep(0.5 - rx, 0.5 + rx, b) - smoothstep(0.5 - rx, 0.5 + rx, a);
 }
+
+float rectline(in vec2 p, in float t, in float a) {
+    p *= rotate2d(a);
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
+}
+float rectline(in vec2 p, in float t) { return rectline (p, t, 0.0); }
+float rectline(in vec2 p) { return rectline (p, 1.0, 0.0); }
 
 float roundrect(in vec2 p, in vec2 size, in float radius) {
     radius *= 2.0; size /= 2.0;
@@ -179,8 +183,8 @@ float star(in vec2 p, in float size, in int sides, float t) {
 
 float grid(in float size) {
     float d = 0.0;
-    d += plot(tile(st, size), 0.002);
-    d += plot(tile(st, size), 0.002, PI_TWO);
+    d += rectline(tile(st, size), 0.002);
+    d += rectline(tile(st, size), 0.002, PI_TWO);
     d *= 0.1;
     vec2 p = tile(st, vec2(size * 5.0, size * 5.0));
     float s = size / 10.0;
@@ -206,11 +210,12 @@ void main() {
     // d = line(st - vec2(0.15), st + vec2(0.15), 0.004);
     // d = pie(st, 0.0, PI_TWO, 0.3);
     // d = pie(st, 0.0, PI_TWO, 0.3, 0.004);
-    // d = plot(st, 0.3, PI_TWO / 2.0);
+    // d = plot(st, -st.x, 0.004);
     // d = poly(st, 0.3, 3);
     // d = poly(st, 0.3, 3, 0.004);
     // d = rect(st, vec2(0.3));
     // d = rect(st, vec2(0.3), 0.004);
+    // d = rectline(st, 0.3, PI_TWO / 2.0);
     // d = roundrect(st, vec2(0.3), 0.02);
     // d = roundrect(st, vec2(0.3), 0.02, 0.004);
     // d = spiral(st, 1.0);

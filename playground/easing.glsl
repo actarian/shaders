@@ -73,19 +73,23 @@ float line(in vec2 a, in vec2 b, float t) {
     return smoothstep(t / 2.0 + rx, t / 2.0 - rx, d);
 }
 
-float plot(in vec2 p, in float t, in float a) {
+float plot(vec2 p, float y, float t){
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.y + y));
+}
+
+float rectline(in vec2 p, in float t, in float a) {
     p *= rotate2d(a);
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
 }
-float plot(in vec2 p, in float t) { return plot (p, t, 0.0); }
-float plot(in vec2 p) { return plot (p, 1.0, 0.0); }
+float rectline(in vec2 p, in float t) { return rectline (p, t, 0.0); }
+float rectline(in vec2 p) { return rectline (p, 1.0, 0.0); }
 
-float grid(in float size) {
+float grid(in vec2 p, in float size) {
     float d = 0.0;
-    d += plot(tile(st, size), 0.002);
-    d += plot(tile(st, size), 0.002, PI_TWO);
+    d += rectline(tile(p, size), 0.002);
+    d += rectline(tile(p, size), 0.002, PI_TWO);
     d *= 0.1;
-    vec2 p = tile(st, vec2(size * 5.0, size * 5.0));
+    p = tile(p, vec2(size * 5.0, size * 5.0));
     float s = size / 10.0;
     float g = 0.0;
     g += line(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
@@ -236,20 +240,14 @@ float easeSineInOut(float t) {
     return -0.5 * (cos(PI * t) - 1.0);
 }
 
-float pplot(vec2 p, float y, float t){
-    // return smoothstep(y - rx, y, p.x) - smoothstep(y, y + rx, p.x);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.y + y));
-}
-
-
 void main() {           
-    vec2 p = st * 1.0;
+    vec2 p = st * 1.2;
     float s = 1.0; float s2 = s / 2.0; float x = 0.5 - p.x;
     float t = fract(u_time * 0.5);
 
     float v = t; float y = x;
-    v = easexBackIn(t); y = easexBackIn(x);
-    // v = easeBackOut(t); y = easexBackIn(x);
+    // v = easexBackIn(t); y = easexBackIn(x);
+    // v = easeBackOut(t); y = easeBackOut(x);
     // v = easeBackInOut(t); y = easeBackInOut(x);
     // v = easeBounceOut(t); y = easeBounceOut(x);
     // v = easeBounceIn(t); y = easeBounceIn(x);
@@ -281,17 +279,19 @@ void main() {
 
     vec3 color = BLACK;
 
-    color = mix(color, WHITE, grid(0.1));
+    color = mix(color, WHITE, grid(p, 0.1));
         
-    // d = pplot(p, y, 0.002);
-    float d = pplot(p, y - s2, 0.002);
+    // d = plot(p, y, 0.002);
+    float d = plot(p, y - s2, 0.004);
     color = mix(color, GREEN, d * 0.5);
 
-    vec2 c = vec2(t, v);    
+    vec2 c = vec2(t, v);
     d = 0.0;
     d += line(p - vec2(s2, s2 + 0.01), p + vec2(-s2, s2 + 0.01), 0.002);
     d += line(p + vec2(-s2 - 0.01, s2), p + vec2(s2 + 0.01, s2), 0.002);
-    d += circle(p - 0.5 + c, 0.02);
+    color = mix(color, WHITE, d * 0.3);
+    
+    d = circle(p - 0.5 + c, 0.02);
     color = mix(color, WHITE, d);
     
     gl_FragColor = vec4(color, 1.0);

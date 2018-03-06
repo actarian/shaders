@@ -121,12 +121,9 @@ float pie(in vec2 p, in float s, in float e, in float size, in float t) {
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
-float plot(in vec2 p, in float t, in float a) {
-    p *= rotate2d(a);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
+float plot(vec2 p, float y, float t){
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.y + y));
 }
-float plot(in vec2 p, in float t) { return plot (p, t, 0.0); }
-float plot(in vec2 p) { return plot (p, 1.0, 0.0); }
 
 float poly(in vec2 p, in float size, in int sides) {
     float a = atan(p.x, p.y) + PI;
@@ -151,6 +148,13 @@ float rect(in vec2 p, in vec2 size, in float t) {
     return smoothstep(0.5 - rx, 0.5 + rx, b) - smoothstep(0.5 - rx, 0.5 + rx, a);
 }
 
+float rectline(in vec2 p, in float t, in float a) {
+    p *= rotate2d(a);
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
+}
+float rectline(in vec2 p, in float t) { return rectline (p, t, 0.0); }
+float rectline(in vec2 p) { return rectline (p, 1.0, 0.0); }
+
 float roundrect(in vec2 p, in vec2 size, in float radius) {
     radius *= 2.0; size /= 2.0;
     float d = length(max(abs(p) -size + radius, 0.0)) - radius;
@@ -170,7 +174,7 @@ float spiral(in vec2 p, in float turn) {
 }
 
 float star(in vec2 p, in float size, in int sides) {    
-    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s;
+    float r = 0.5; float s = float(sides); float m = 0.5 / s;
     float segment = atan(p.y, p.x) / TWO_PI * s;    
     float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
     float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
@@ -186,8 +190,8 @@ float star(in vec2 p, in float size, in int sides, float t) {
 
 float grid(in float size) {
     float d = 0.0;
-    d += plot(tile(st, size), 0.002);
-    d += plot(tile(st, size), 0.002, PI_TWO);
+    d += rectline(tile(st, size), 0.002);
+    d += rectline(tile(st, size), 0.002, PI_TWO);
     d *= 0.1;
     vec2 p = tile(st, vec2(size * 5.0, size * 5.0));
     float s = size / 10.0;
@@ -213,11 +217,12 @@ void main() {
     // d = line(pos(-75.0, -75.0), pos(75.0, 75.0), pix(2.0));
     // d = pie(pos(0.0), 0.0, PI_TWO, pix(150.0));
     // d = pie(pos(0.0), 0.0, PI_TWO, pix(150.0), pix(2.0));
-    // d = plot(pos(0.0), pix(150.0), PI_TWO / 2.0);
+    // d = plot(pos(0.0), -st.x, pix(2.0));
     // d = poly(pos(0.0), pix(150.0), 3);
     // d = poly(pos(0.0), pix(150.0), 3, pix(2.0));
     // d = rect(pos(0.0), pix(150.0, 150.0));
     // d = rect(pos(0.0), pix(150.0, 150.0), pix(2.0));
+    // d = rectline(pos(0.0), pix(150.0), PI_TWO / 2.0);
     // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0));
     // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0), pix(2.0));
     // d = spiral(pos(0.0), 1.0);
