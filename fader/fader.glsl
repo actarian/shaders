@@ -22,24 +22,15 @@ vec2 coord(in vec2 p) {
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
 
-uniform sampler2D u_texture_3;
 uniform sampler2D u_texture_4;
+uniform sampler2D u_texture_5;
 
 void main() {
-    vec3 color = vec3(0.0);    
-    
-    float r = texture2D(u_texture_4, uv).r;
-    color = mix(color, texture2D(u_texture_3, uv).rgb, r);
-
-    /*
-    fixed4 colorMultiply = IN.color; colorMultiply.a = 1;
-    fixed4 c = SampleSpriteTexture(IN.texcoord) * colorMultiply;
-    fixed4 fadeInColor = tex2D(_FadeInTex, IN.fadeincoord);
-    float fadeInBrightness = fadeInColor.r;
-    float lerpLevel = clamp(0,1,(IN.color.a - fadeInBrightness) / _Softness);
-    c.a = lerp(0, c.a, lerpLevel);
-    c.rgb *= c.a;
-    */
-
+    vec3 color = vec3(1.0);
+    float v = fract(u_time * 0.3);
+    float r = (1.0 - texture2D(u_texture_5, uv).r);
+    r = 1.0 - smoothstep(v, v + 0.1, r);
+    r = clamp(r, 0.0, 1.0);
+    color = mix(color, texture2D(u_texture_4, uv).rgb, r);
     gl_FragColor = vec4(color, 1.0);
 }
