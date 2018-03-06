@@ -142,23 +142,45 @@ float poly(in vec2 p, in float size, in int sides, in float t) {
 }
 
 float rect(in vec2 p, in vec2 size) {
-    float d = length(max(abs(p) - size / 2.0, 0.0));
-    return 1.0 - smoothstep(0.0, 0.0 + rx * 2.0, d);
+    float d = max(abs(p.x / size.x), abs(p.y / size.y));
+    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
 }
 float rect(in vec2 p, in vec2 size, in float t) {
-    size /= 2.0;
-    float d = length(max(abs(p), size - t) - size + t) - t - rx;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+    float a = abs(max(abs(p.x / (size.x + t)), abs(p.y / (size.y + t))));
+    float b = abs(max(abs(p.x / (size.x - t)), abs(p.y / (size.y - t))));
+    return smoothstep(0.5 - rx, 0.5 + rx, b) - smoothstep(0.5 - rx, 0.5 + rx, a);
 }
 
 float roundrect(in vec2 p, in vec2 size, in float radius) {
     radius *= 2.0; size /= 2.0;
     float d = length(max(abs(p) -size + radius, 0.0)) - radius;
-    return 1.0 - smoothstep(0.0, 0.0 + rx * 2.0, d);
+    return 1.0 - smoothstep(0.0, rx * 2.0, d);
 }
 float roundrect(in vec2 p, in vec2 size, in float radius, in float t) {
     radius *= 2.0; size /= 2.0; size -= radius;
     float d = length(max(abs(p), size) - size) - radius;
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+}
+
+float spiral(in vec2 p, in float turn) {    
+    float r = dot(p, p);
+    float a = atan(p.y, p.x);
+    float d = abs(sin(fract(log(r) * (turn / 5.0) + a * 0.159)));
+    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
+}
+
+float star(in vec2 p, in float size, in int sides) {    
+    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s;
+    float segment = atan(p.y, p.x) / TWO_PI * s;    
+    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
+    float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
+    return 1.0 - smoothstep(0.0, rx * 2.0, d);
+}
+float star(in vec2 p, in float size, in int sides, float t) {    
+    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s;
+    float segment = atan(p.y, p.x) / TWO_PI * s;    
+    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
+    float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
@@ -187,17 +209,20 @@ void main() {
     d = arc(pos(0.0), 0.0, PI_TWO, pix(150.0));
     // d = arc(pos(0.0), 0.0, PI_TWO, pix(150.0), pix(2.0));
     // d = circle(pos(0.0), pix(150.0));
-    // d = circle(pos(0.0), pix(150.0), pix(1.0));    
-    // d = line(pos(-75.0, -75.0), pos(75.0, 75.0), pix(1.0));
+    // d = circle(pos(0.0), pix(150.0), pix(2.0));    
+    // d = line(pos(-75.0, -75.0), pos(75.0, 75.0), pix(2.0));
     // d = pie(pos(0.0), 0.0, PI_TWO, pix(150.0));
     // d = pie(pos(0.0), 0.0, PI_TWO, pix(150.0), pix(2.0));
     // d = plot(pos(0.0), pix(150.0), PI_TWO / 2.0);
     // d = poly(pos(0.0), pix(150.0), 3);
-    // d = poly(pos(0.0), pix(150.0), 3, pix(1.0));
+    // d = poly(pos(0.0), pix(150.0), 3, pix(2.0));
     // d = rect(pos(0.0), pix(150.0, 150.0));
-    // d = rect(pos(0.0), pix(150.0, 150.0), pix(1.0));
-    // d = roundrect((pos(0.0)), pix(150.0, 150.0), pix(10.0));
-    // d = roundrect((pos(0.0)), pix(150.0, 150.0), pix(10.0), pix(1.0));
+    // d = rect(pos(0.0), pix(150.0, 150.0), pix(2.0));
+    // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0));
+    // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0), pix(2.0));
+    // d = spiral(pos(0.0), 1.0);
+    // d = star(pos(0.0), pix(150.0), 6);
+    // d = star(pos(0.0), pix(150.0), 6, pix(2.0));
     
     color = mix(color, WHITE, d);
 

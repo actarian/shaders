@@ -147,25 +147,11 @@ float rect(in vec2 p, in vec2 size, in float t) {
 float roundrect(in vec2 p, in vec2 size, in float radius) {
     radius *= 2.0; size /= 2.0;
     float d = length(max(abs(p) -size + radius, 0.0)) - radius;
-    return 1.0 - smoothstep(0.0, 0.0 + rx * 2.0, d);
+    return 1.0 - smoothstep(0.0, rx * 2.0, d);
 }
 float roundrect(in vec2 p, in vec2 size, in float radius, in float t) {
     radius *= 2.0; size /= 2.0; size -= radius;
     float d = length(max(abs(p), size) - size) - radius;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
-}
-
-float star(in vec2 p, in float size, in int sides) {    
-    float seg = atan(p.y, p.x) / TWO_PI * float(sides);
-    float a = ((floor(seg) + 0.5) / float(sides) + mix(size, -size, step(0.5, fract(seg)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a), sin(a)), p));
-    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
-}
-float star(in vec2 p, in float size, in int sides, float t) {    
-    float seg = atan(p.y, p.x) / TWO_PI * float(sides);
-    float s = 0.5;
-    float a = ((floor(seg) + s) / float(sides) + mix(size + t / 2.0, -size - t / 2.0, step(s, fract(seg)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a), sin(a)), p)) - size / 2.0;
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
@@ -174,6 +160,21 @@ float spiral(in vec2 p, in float turn) {
     float a = atan(p.y, p.x);
     float d = abs(sin(fract(log(r) * (turn / 5.0) + a * 0.159)));
     return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
+}
+
+float star(in vec2 p, in float size, in int sides) {    
+    float r = 0.5; float s = float(sides); float m = 0.5 / s;
+    float segment = atan(p.y, p.x) / TWO_PI * s;    
+    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
+    float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
+    return 1.0 - smoothstep(0.0, rx * 2.0, d);
+}
+float star(in vec2 p, in float size, in int sides, float t) {    
+    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s;
+    float segment = atan(p.y, p.x) / TWO_PI * s;    
+    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
+    float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
+    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
 float grid(in float size) {
@@ -458,12 +459,12 @@ void main() {
 
     if (between(1.0)) {
         v = easeCircularIn(animation.pow);
-        object.distance = star(st, 0.5, 5 + int(animation.pow * 40.0), 0.04);
+        object.distance = star(st, 0.5, 5 + int(animation.pow * 15.0), 0.04);
     }
 
     if (between(0.5)) {
         v = easeCircularIn(animation.pow);
-        object.distance = star(st + vec2(0.0, mix(0.0, 0.5, v)), 0.5, 45, 0.04) * (1.0 - animation.pow);
+        object.distance = star(st + vec2(0.0, mix(0.0, 0.5, v)), 0.5, 20, 0.04) * (1.0 - animation.pow);
     }
 
     color = mix(color, object.color, object.distance);

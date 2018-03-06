@@ -3,7 +3,8 @@
         "0": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/cloud-1.png",
         "1": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/cloud-2.jpg",
         "2": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/noise.png",
-        "3": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/checker.png"
+        "3": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/checker.png",
+        "4": "/fader/fader.jpg"
     },
     "glsl-canvas.uniforms": {
         "u_pow": [
