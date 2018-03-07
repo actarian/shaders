@@ -43,7 +43,7 @@ float easeSineInOut(float t) {
 void main() {
     vec3 color = vec3(1.0);
     // time
-    float v = fract(u_time * 0.3);
+    float v = fract(u_time * 0.2);
     // easing
     v = easeSineInOut(v);
     // mouse
@@ -53,14 +53,13 @@ void main() {
     r = 1.0 - smoothstep(v, v + 0.1, r);
     r = clamp(r, 0.0, 1.0);
     // colors
-    float s = (0.1 * v);
-    /*
-    vec3 colorA = texture2D(u_texture_4, uv * (1.0 - s) + s / 2.0).rgb;
-    colorA = vec3(a.r + a.g + a.b) / 3.0;
-    */
+    float s = mix(0.1, 0.0, v);
     vec3 colorA = vec3(1.0);
     vec3 colorB = texture2D(u_texture_4, uv * (1.0 - s) + s / 2.0).rgb;
+    float l = length(colorB.r) / 3.0;
+    l = mix(0.0, 0.05, l * (1.0 - v));
+    vec3 colorC = texture2D(u_texture_4, (uv * (1.0 - s) + s / 2.0) + (1.0 + l)).rgb;
     // mix
-    color = mix(colorA, colorB, r);
+    color = mix(colorA, colorC, r);
     gl_FragColor = vec4(color, 1.0);
 }
