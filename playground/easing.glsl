@@ -283,7 +283,7 @@ void main() {
         
     // d = plot(p, y, 0.002);
     float d = plot(p, y - s2, 0.004);
-    color = mix(color, GREEN, d * 0.5);
+    color = mix(color, BLUE, d * 0.5);
 
     vec2 c = vec2(t, v);
     d = 0.0;

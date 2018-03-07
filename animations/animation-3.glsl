@@ -32,6 +32,15 @@ uniform vec3 u_color;
 #define VIOLET          vec3(0.5, 0.0, 1.0)
 #define AZUR            vec3(0.0, 0.5, 1.0)
 
+float random(in vec2 p) {
+    return fract(sin(dot(p.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+float noise(vec2 p) {
+    vec2 ua = p + u_time * 0.02;
+    vec2 ub = p * 0.8 + u_time * 0.04;
+    float n = texture2D(u_texture_0, ua).r * texture2D(u_texture_0, ub).r;
+    return n;
+}
 vec2 coord(in vec2 p) {
 	p = p / u_resolution.xy;
     if (u_resolution.x > u_resolution.y) {
@@ -48,7 +57,9 @@ vec2 coord(in vec2 p) {
 #define uv gl_FragCoord.xy / u_resolution.xy
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
+#define ee noise(gl_FragCoord.xy / u_resolution.xy)
 #define rx 1.0 / min(u_resolution.x, u_resolution.y)
+// #define rx ee * 0.05 + 1.0 / min(u_resolution.x, u_resolution.y)
 
 mat2 rotate2d(float a){
     return mat2(cos(a), -sin(a), sin(a), cos(a));
@@ -351,7 +362,9 @@ bool between(in float duration) {
 }
 
 void main() {
-    vec2 p = st; float v = 0.0; float v2 = 0.0;
+    vec2 p = st - ee * 0.03;
+    float v = 0.0;
+    float v2 = 0.0;
 
     totalTime(12.0);
         
@@ -460,11 +473,17 @@ void main() {
         object.distance = star(p + vec2(0.0, mix(0.0, 0.5, v)), 0.5, 6, 0.04) * (1.0 - animation.pow);
     }
 
-    vec3 color = BLACK;
+    vec3 color = BLACK + 0.015;
     
-    object.color = WHITE;
+    // object.color = WHITE;
+    object.color = vec3(0.0, 0.6, 0.9);
+    // object.color = vec3(abs(cos(p.x)), abs(sin(p.y)), abs(cos(u_time * 0.1)));
+    // object.color = vec3(abs(cos(p.x + ee)), abs(sin(p.y - ee)), abs(sin(u_time * 5.0 + ee)));
+    // color = mix(color, WHITE, grid(0.1));
+    
+    object.color += ee * 0.1 - random(st) * length(st) * 0.5;
     
     color = mix(color, object.color, object.distance);
-
+    
     gl_FragColor = vec4(color, 1.0);
 }

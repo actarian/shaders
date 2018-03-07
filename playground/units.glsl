@@ -174,17 +174,17 @@ float spiral(in vec2 p, in float turn) {
 }
 
 float star(in vec2 p, in float size, in int sides) {    
-    float r = 0.5; float s = float(sides); float m = 0.5 / s;
-    float segment = atan(p.y, p.x) / TWO_PI * s;    
+    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
+    float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
     float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
+    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m - size / 2.0;
     return 1.0 - smoothstep(0.0, rx * 2.0, d);
 }
 float star(in vec2 p, in float size, in int sides, float t) {    
-    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s;
-    float segment = atan(p.y, p.x) / TWO_PI * s;    
+    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
+    float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
     float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a), sin(a)), p)) + m - size / 2.0;
+    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m - size / 2.0;
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
@@ -226,8 +226,8 @@ void main() {
     // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0));
     // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0), pix(2.0));
     // d = spiral(pos(0.0), 1.0);
-    // d = star(pos(0.0), pix(150.0), 6);
-    // d = star(pos(0.0), pix(150.0), 6, pix(2.0));
+    // d = star(pos(0.0), pix(150.0), 5);
+    // d = star(pos(0.0), pix(150.0), 5, pix(2.0));
     
     color = mix(color, WHITE, d);
 

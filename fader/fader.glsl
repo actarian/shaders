@@ -58,7 +58,7 @@ void main() {
     vec3 colorA = texture2D(u_texture_4, uv * (1.0 - s) + s / 2.0).rgb;
     colorA = vec3(a.r + a.g + a.b) / 3.0;
     */
-    vec3 colorA = vec3(0.0);
+    vec3 colorA = vec3(1.0);
     vec3 colorB = texture2D(u_texture_4, uv * (1.0 - s) + s / 2.0).rgb;
     // mix
     color = mix(colorA, colorB, r);
