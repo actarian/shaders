@@ -362,7 +362,8 @@ bool between(in float duration) {
 }
 
 void main() {
-    vec2 p = st - ee * 0.03;
+    // vec2 p = st - ee * 0.2;
+    vec2 p = st;
     float v = 0.0;
     float v2 = 0.0;
 
@@ -477,8 +478,7 @@ void main() {
     
     // object.color = WHITE;
     object.color = vec3(0.0, 0.6, 0.9);
-    // object.color = vec3(abs(cos(p.x)), abs(sin(p.y)), abs(cos(u_time * 0.1)));
-    // object.color = vec3(abs(cos(p.x + ee)), abs(sin(p.y - ee)), abs(sin(u_time * 5.0 + ee)));
+    // object.color += vec3(abs(sin(p.x)), abs(cos(u_time * 0.1)), abs(cos(p.y)));
     // color = mix(color, WHITE, grid(0.1));
     
     object.color += ee * 0.1 - random(st) * length(st) * 0.5;

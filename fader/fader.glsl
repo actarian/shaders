@@ -56,9 +56,10 @@ void main() {
     float s = mix(0.1, 0.0, v);
     vec3 colorA = vec3(1.0);
     vec3 colorB = texture2D(u_texture_4, uv * (1.0 - s) + s / 2.0).rgb;
-    float l = length(colorB.r) / 3.0;
-    l = mix(0.0, 0.05, l * (1.0 - v));
-    vec3 colorC = texture2D(u_texture_4, (uv * (1.0 - s) + s / 2.0) + (1.0 + l)).rgb;
+    float l = (colorB.r + colorB.g + colorB.b) / 3.0;
+    l = mix(0.0, 0.5, l * (1.0 - v));
+    l = smoothstep(0.0, 0.5, l) * 0.03;
+    vec3 colorC = texture2D(u_texture_4, (uv * (1.0 - s) + s / 2.0) + l).rgb;
     // mix
     color = mix(colorA, colorC, r);
     gl_FragColor = vec4(color, 1.0);

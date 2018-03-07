@@ -222,7 +222,7 @@ void main() {
     // d = poly(pos(0.0), pix(150.0), 3, pix(2.0));
     // d = rect(pos(0.0), pix(150.0, 150.0));
     // d = rect(pos(0.0), pix(150.0, 150.0), pix(2.0));
-    // d = rectline(pos(0.0), pix(150.0), PI_TWO / 2.0);
+    // d = rectline(pos(0.0), pix(2.0), PI_TWO / 2.0);
     // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0));
     // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0), pix(2.0));
     // d = spiral(pos(0.0), 1.0);

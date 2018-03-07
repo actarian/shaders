@@ -215,12 +215,12 @@ void main() {
     // d = poly(st, 0.3, 3, 0.004);
     // d = rect(st, vec2(0.3));
     // d = rect(st, vec2(0.3), 0.004);
-    // d = rectline(st, 0.3, PI_TWO / 2.0);
+    // d = rectline(st, 0.004, PI_TWO / 2.0);
     // d = roundrect(st, vec2(0.3), 0.02);
     // d = roundrect(st, vec2(0.3), 0.02, 0.004);
     // d = spiral(st, 1.0);
     // d = star(st, 0.3, 5);
-    // d = star(st, 0.3, 5, 0.004); //  + abs(cos(u_time) * 0.4)
+    // d = star(st, 0.3, 5, 0.004);
     
     color = mix(color, WHITE, d);
     
