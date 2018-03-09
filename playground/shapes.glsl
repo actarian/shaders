@@ -60,16 +60,16 @@ vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
 float fill(in float d, in float size) { return 1.0 - smoothstep(size - rx, size + rx, d); }
 float fill(in float d, in vec2 size) { return fill(d, max(size.x, size.y) ); }
 
-float stroke(in float d, in float size, in float t) { return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d - size)); }
+float stroke(in float d, in float size, in float t) { return 1.0 - smoothstep(t - rx, t + rx, abs(d - size)); }
 float stroke(in float d, in vec2 size, in float t) { return stroke(d, max(size.x, size.y), t); }
 
 float sArc(in vec2 p, in float s, in float e, in float size) {
     e += s;
-    float o = (s / 2.0 + e / 2.0 - PI);
+    float o = (s + e - PI);
 	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
 	a = clamp(a, min(s, e), max(s, e));
-	float d = distance(p, size / 2.0 * vec2(cos(a), sin(a)));
-    return d + size;
+	float d = distance(p, size * 0.5 * vec2(cos(a), sin(a))) + size;
+    return d;
 }
 float arc(in vec2 p, in float s, in float e, in float size) {
     /*
@@ -82,6 +82,7 @@ float arc(in vec2 p, in float s, in float e, in float size) {
     d = smoothstep(d - rx, d + rx, size / 2.0 * a);
     */
     float d = sArc(p, s, e, size);
+    // return d;
     return fill(d, size);
 }
 float arc(in vec2 p, in float s, in float e, in float size, in float t) {
@@ -98,13 +99,13 @@ float circle(in vec2 p, in float size) {
 }
 float circle(in vec2 p, in float size, float t) {
     float d = sCircle(p);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d - size));
+    return stroke(d, size, t);
 }
 
 float sLine(in vec2 a, in vec2 b) {
     vec2 ba = a - b;
     float d = clamp(dot(a, ba) / dot(ba, ba), 0.0, 1.0);
-    return length(a - ba * d);
+    return length(a - ba * d) * 2.0;
 }
 float line(in vec2 a, in vec2 b, float t) {
     float d = sLine(a, b);
@@ -148,15 +149,8 @@ float poly(in vec2 p, in float size, in int sides) {
     return fill(d, size);
 }
 float poly(in vec2 p, in float size, in int sides, in float t) {
-    /*
-    float d = sPoly(p, size, sides);
-    float a = atan(p.x, p.y) + PI;
-    float r = TWO_PI / float(sides);
-    float d = cos(floor(0.5 + a / r) * r - a) * length(max(abs(p) * 1.0, 0.0)) - size / 2.0;
-    */
     float d = sPoly(p, sides);
     return stroke(d, size, t);
-    //return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d - size));
 }
 
 float sRect(in vec2 p, in vec2 size) {    
@@ -173,15 +167,6 @@ float rect(in vec2 p, in vec2 size, in float t) {
 }
 
 /*
-CIRCLE
-float circle(vec2 point, float radius) {
-  return length(point) - radius;
-}
-BOX
-float box(vec2 point, vec2 size) {
-  vec2 d = abs(point) - size;
-  return min(max(d.x, d.y),0.0) + length(max(d,0.0));
-}
 HEXAGON
 float hexagon(vec2 point, float radius) {
   vec2 q = abs(point);
@@ -191,7 +176,7 @@ float hexagon(vec2 point, float radius) {
 
 float sRectline(in vec2 p, in float a) {
     p *= rotate2d(a);
-    return p.x;
+    return p.x * 2.0;
 }
 float rectline(in vec2 p, in float a, in float t) {
     float d = sRectline(p, a);
@@ -200,29 +185,22 @@ float rectline(in vec2 p, in float a, in float t) {
 float rectline(in vec2 p, in float a) { return rectline(p, a, 0.004); }
 float rectline(in vec2 p) { return rectline(p, 0.0, 0.004); }
 
-
-float sRectt(in vec2 p, in vec2 size) {    
-    float d = max(abs(p.x / size.x), abs(p.y / size.y)) * 2.0;
-    return d * max(size.x, size.y);
-}
 float sRoundrect(in vec2 p, in vec2 size, in float radius) {
-    // radius *= 2.0; size /= 2.0;
-    // float d = length(max(abs(p) -size + radius, 0.0)) - radius;
     float m = max(size.x, size.y);
-    radius *= 2.0; size /= 2.0; size -= radius;
-    float d = length(max(abs(p), size) - size) - radius;
-    return d; // * m;
+    vec2 s = (size * 0.5) - radius;
+    float d = length(max(abs(p) - s, 0.0)) / radius * m;
+    return d;
 }
 float roundrect(in vec2 p, in vec2 size, in float radius) {
     float d = sRoundrect(p, size, radius);
-    return fill(d, 0.0);
+    return fill(d, size);
 }
 float roundrect(in vec2 p, in vec2 size, in float radius, in float t) {
+    size = vec2(0.4); radius = 0.1; t = 0.1;
     float d = sRoundrect(p, size, radius);
-    // radius *= 2.0; size /= 2.0; size -= radius;
-    // float d = length(max(abs(p), size) - size) - radius;
-    // return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
-    return stroke(d, 0.0, t);
+    // return d;
+    float m = max(size.x - radius, size.y - radius);
+    return stroke(d, size, t);
 }
 
 float sSpiral(in vec2 p, in float turns) {
@@ -241,29 +219,15 @@ float sStar(in vec2 p, in int sides) {
     float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
     float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
     float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m;
-    return d;
+    return d * 2.0 - 2.0 * rx;
 }
 float star(in vec2 p, in float size, in int sides) {
     float d = sStar(p, sides);
     return fill(d, size);
-    /*
-    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
-    float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
-    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m - size / 2.0;
-    return 1.0 - smoothstep(0.0, rx * 2.0, d);
-    */
 }
 float star(in vec2 p, in float size, in int sides, float t) {    
     float d = sStar(p, sides);
     return stroke(d, size, t);
-    /*
-    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
-    float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
-    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m - size / 2.0;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
-    */
 }
 
 float grid(in float size) {
@@ -289,23 +253,23 @@ void main() {
     float d = 0.0;
     
     d = arc(p, 0.0, PI_TWO, 0.3);
-    // d = arc(p, 0.0, PI_TWO, 0.3, 0.004);
+    // d = arc(p, 0.0, PI_TWO, 0.3, 0.05);
     // d = circle(p, 0.3);
-    // d = circle(p, 0.3, 0.004);
-    // d = line(p - vec2(0.15), p + vec2(0.15), 0.004);
+    // d = circle(p, 0.3, 0.1);
+    // d = line(p - vec2(0.15), p + vec2(0.15), 0.1);
     // d = pie(p, 0.0, PI_TWO, 0.3);
-    // d = pie(p, 0.0, PI_TWO, 0.3, 0.004);
-    // d = plot(p, -p.x, 0.004);
+    // d = pie(p, 0.0, PI_TWO, 0.3, 0.1);
+    // d = plot(p, -p.x, 0.1);
     // d = poly(p, 0.3, 3);
-    // d = poly(p, 0.3, 3, 0.004);
+    // d = poly(p, 0.3, 3, 0.1);
     // d = rect(p, vec2(0.3));
-    // d = rect(p, vec2(0.3), 0.004);
-    // d = rectline(p, PI_TWO / 2.0, 0.004);
-    // d = roundrect(p, vec2(0.3), 0.02);
-    d = roundrect(p, vec2(0.2), 0.02, 0.004);
+    // d = rect(p, vec2(0.3), 0.1);
+    // d = rectline(p, PI_TWO / 2.0, 0.1);
+    // d = roundrect(p, vec2(0.3), 0.1);
+    // d = roundrect(p, vec2(0.3), 0.1, 0.1);
     // d = spiral(p, 1.0);
-    // d = star(p, 0.3, 5);
-    // d = star(p, 0.3, 5, 0.004);
+    // d = star(p, 0.3, 6);
+    // d = star(p, 0.3, 6, 0.05);
     
     color = mix(color, WHITE, d);
     
