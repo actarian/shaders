@@ -68,136 +68,185 @@ mat2 rotate2d(float a){
 vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
 vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
 
-float pi = atan(1.0) * 4.0;
-float tau = atan(1.0) * 8.0;
-float arc(in vec2 p, in float s, in float e, in float size) {
-    s = mod(s, TWO_PI);
-    e = mod(s + e, TWO_PI);
-    float a = mod(atan(p.y, p.x), TWO_PI);
-    a = abs(step(s, a) - step(e, a));
-    a = s < e ? a : 1.0 - a;
-    float d = length(p);
-    d = smoothstep(d - rx, d + rx, size / 2.0 * a);
-    return d;
-}
-float arc(in vec2 p, in float s, in float e, in float size, in float t) {
+float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
+float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
+
+float sArc(in vec2 p, in float size, in float s, in float e) {
     e += s;
-    float o = (s / 2.0 + e / 2.0 - pi);
-	float a = mod(atan(p.y, p.x) - o, tau) + o;
+    float o = (s + e - PI);
+	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
 	a = clamp(a, min(s, e), max(s, e));
-	float d = distance(p, size / 2.0 * vec2(cos(a), sin(a)));
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+    vec2 r = vec2(cos(a), sin(a));
+	float d = distance(p, size * 0.5 * r);
+    return d * 2.0;
+}
+float arc(in vec2 p, in float size, in float s, in float e, in float t) {
+    float d = sArc(p, size, s, e);
+    return stroke(d, t);
 }
 
+float sCircle(in vec2 p, in float size) {
+    return length(p) * 2.0 - size;
+}
 float circle(in vec2 p, in float size) {
-    float d = length(p) * 2.0;
-    return 1.0 - smoothstep(size - rx, size + rx, d);
+    float d = sCircle(p, size);
+    return fill(d);
 }
-float circle(in vec2 p, in float size, in float t) {
-    float d = length(abs(p)) - size / 2.0;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+float circle(in vec2 p, in float size, float t) {
+    float d = sCircle(p, size);
+    return stroke(d, t);
 }
 
+float sHex(in vec2 p, in float size) {
+    vec2 q = abs(p);
+    float d = max((q.x * 0.866025 + q.y * 0.5), q.y) - size * 0.5; // * 0.4330125
+    return d * 2.0;
+}
+float hex(in vec2 p, in float size) {    
+    float d = sHex(p, size);
+    return fill(d);
+}
+float hex(in vec2 p, in float size, in float t) {
+    float d = sHex(p, size);
+    return stroke(d, t);    
+}
+
+float sLine(in vec2 a, in vec2 b) {
+    vec2 p = b - a;
+    float d = abs(dot(normalize(vec2(p.y, -p.x)), a));
+    return d * 2.0;
+}
+float line(in vec2 a, in vec2 b) {
+    float d = sLine(a, b);
+    return fill(d);
+}
 float line(in vec2 a, in vec2 b, in float t) {
-    vec2 ba = a - b;
-    float d = clamp(dot(a, ba) / dot(ba, ba), 0.0, 1.0);
-    d = length(a - ba * d);
-    return smoothstep(t / 2.0 + rx, t / 2.0 - rx, d);
+    float d = sLine(a, b);
+    return stroke(d, t);
+}
+float line(in vec2 p, in float a, in float t) {
+    vec2 b = p + vec2(sin(a), cos(a));
+    return line(p, b, t);
 }
 
-float pie(in vec2 p, in float s, in float e, in float size) {
+float sPie(in vec2 p, in float size, in float s, in float e) {
     s = mod(s, TWO_PI);
     e = mod(s + e, TWO_PI);
     float a = mod(atan(p.y, p.x), TWO_PI);
     a = abs(step(s, a) - step(e, a));
     a = s < e ? a : 1.0 - a;
     float d = length(p);
-    d = smoothstep(d - rx, d + rx, size / 2.0 * a);
-    return d;
+    return 1.0 - (a - d * 2.0) - size;
 }
-float pie(in vec2 p, in float s, in float e, in float size, in float t) {
-    s = mod(s, TWO_PI);
-    e = mod(s + e, TWO_PI);
-    float a = mod(atan(p.y, p.x), TWO_PI);
-    a = abs(step(s, a) - step(e, a));
-    a = s < e ? a : 1.0 - a;
-    float d = length(p * a) - size / 2.0;
+float pie(in vec2 p, in float size, in float s, in float e) {    
+    float d = sPie(p, size, s, e);
+    return fill(d);
+}
+float pie(in vec2 p, in float size, in float s, in float e, in float t) {
+    float d = sPie(p, size, s, e);
+    return stroke(d, t);    
+}
+
+float sPlot(vec2 p, float y){
+    return p.y + y;
+}
+float plot(vec2 p, float y, float t) {
+    float d = sPlot(p, y);
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
-float poly(in vec2 p, in float size, in int sides) {
+float sPoly(in vec2 p, in float size, in int sides) {
     float a = atan(p.x, p.y) + PI;
     float r = TWO_PI / float(sides);
     float d = cos(floor(0.5 + a / r) * r - a) * length(max(abs(p) * 1.0, 0.0));
-    return 1.0 - smoothstep(size / 2.0 - rx, size / 2.0 + rx, d);
+    return d * 2.0 - size;
+}
+float poly(in vec2 p, in float size, in int sides) {
+    float d = sPoly(p, size, sides);
+    return fill(d);
 }
 float poly(in vec2 p, in float size, in int sides, in float t) {
-    float a = atan(p.x, p.y) + PI;
-    float r = TWO_PI / float(sides);
-    float d = cos(floor(0.5 + a / r) * r - a) * length(max(abs(p) * 1.0, 0.0)) - size / 2.0;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+    float d = sPoly(p, size, sides);
+    return stroke(d, t);
 }
 
+float sRect(in vec2 p, in vec2 size) {    
+    float d = max(abs(p.x / size.x), abs(p.y / size.y)) * 2.0;
+    float m = max(size.x, size.y);
+    return d * m - m;
+}
 float rect(in vec2 p, in vec2 size) {
-    float d = max(abs(p.x / size.x), abs(p.y / size.y));
-    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
+    float d = sRect(p, size);
+    return fill(d);
 }
 float rect(in vec2 p, in vec2 size, in float t) {
-    float a = abs(max(abs(p.x / (size.x + t)), abs(p.y / (size.y + t))));
-    float b = abs(max(abs(p.x / (size.x - t)), abs(p.y / (size.y - t))));
-    return smoothstep(0.5 - rx, 0.5 + rx, b) - smoothstep(0.5 - rx, 0.5 + rx, a);
+    float d = sRect(p, size);
+    return stroke(d, t);
 }
 
-float rectline(in vec2 p, in float t, in float a) {
-    p *= rotate2d(a);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
+float sRoundrect(in vec2 p, in vec2 size, in float border) {
+    vec2 s = size * 0.5 - border;
+    float m = max(s.x, s.y);
+    float d = length(max(abs(p) - s, 0.00001)) * m / border;
+    return (d - m) / m * border * 2.0;
 }
-float rectline(in vec2 p, in float t) { return rectline (p, t, 0.0); }
-float rectline(in vec2 p) { return rectline (p, 1.0, 0.0); }
-
-float roundrect(in vec2 p, in vec2 size, in float radius) {
-    radius *= 2.0; size /= 2.0;
-    float d = length(max(abs(p) -size + radius, 0.0)) - radius;
-    return 1.0 - smoothstep(0.0, rx * 2.0, d);
+float roundrect(in vec2 p, in vec2 size, in float border) {
+    float d = sRoundrect(p, size, border);
+    return fill(d);
 }
-float roundrect(in vec2 p, in vec2 size, in float radius, in float t) {
-    radius *= 2.0; size /= 2.0; size -= radius;
-    float d = length(max(abs(p), size) - size) - radius;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+float roundrect(in vec2 p, in vec2 size, in float border, in float t) {
+    float d = sRoundrect(p, size, border);
+    return stroke(d, t);
 }
 
-float spiral(in vec2 p, in float turn) {    
+float sSegment(in vec2 a, in vec2 b) {
+    vec2 ba = a - b;
+    float d = clamp(dot(a, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(a - ba * d) * 2.0;
+}
+float segment(in vec2 a, in vec2 b, float t) {
+    float d = sSegment(a, b);
+    return stroke(d, t);
+}
+
+float sSpiral(in vec2 p, in float turns) {
     float r = dot(p, p);
     float a = atan(p.y, p.x);
-    float d = abs(sin(fract(log(r) * (turn / 5.0) + a * 0.159)));
-    return 1.0 - smoothstep(0.5 - rx, 0.5 + rx, d);
+    float d = abs(sin(fract(log(r) * (turns / 5.0) + a * 0.159)));
+    return d - 0.5;
+}
+float spiral(in vec2 p, in float turns) {    
+    float d = sSpiral(p, turns);
+    return fill(d);
 }
 
-float star(in vec2 p, in float size, in int sides) {    
+float sStar(in vec2 p, in float size, in int sides) {    
     float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
     float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
     float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m - size / 2.0;
-    return 1.0 - smoothstep(0.0, rx * 2.0, d);
+    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m;
+    return (d - rx) * 2.0 - size;
+}
+float star(in vec2 p, in float size, in int sides) {
+    float d = sStar(p, size, sides);
+    return fill(d);
 }
 float star(in vec2 p, in float size, in int sides, float t) {    
-    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
-    float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
-    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m - size / 2.0;
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
+    float d = sStar(p, size, sides);
+    return stroke(d, t);
 }
 
-float grid(in float size) {
+float grid(in vec2 p, in float size) {
+    vec2 l = tile(p, size);
     float d = 0.0;
-    d += rectline(tile(st, size), 0.002);
-    d += rectline(tile(st, size), 0.002, PI_TWO);
-    d *= 0.1;
-    vec2 p = tile(st, vec2(size * 5.0, size * 5.0));
+    d += line(l, l + vec2(0.0, 0.1), 0.002);
+    d += line(l, l + vec2(0.1, 0.0), 0.002);
+    d *= 0.2;
+    p = tile(p, vec2(size * 5.0));
     float s = size / 10.0;
     float g = 0.0;
-    g += line(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
-    g += line(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
+    g += segment(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
+    g += segment(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
     return d + g;
 }
 
@@ -385,33 +434,33 @@ void main() {
 
     if (between(0.5, 0.25)) {
         v = easeElasticOut(animation.pow);
-        object.distance = rectline(p, 0.5 * v);
+        object.distance = line(p, 0.0, 0.5 * v);
     }
 
     if (between(0.25)) {
         v = easeSineInOut(animation.pow);
-        object.distance = rectline(p, 0.5, PI_TWO / 2.0 * v);
+        object.distance = line(p, PI_TWO / 2.0 * v, 0.5);
     }
 
     if (between(0.5)) {
         v = easeBounceOut(animation.pow);
-        object.distance = rectline(p, 0.5 * (1.0 - v), PI_TWO / 2.0);
+        object.distance = line(p, PI_TWO / 2.0, 0.5 * (1.0 - v));
     }
 
     if (between(1.0, 0.25)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance = line(p + vec2(mix(-0.5, 0.5, v), 0.0), st + vec2(mix(-0.5, 0.5, v2), 0.0), 0.004);
+        object.distance = segment(p + vec2(mix(-0.5, 0.5, v), 0.0), st + vec2(mix(-0.5, 0.5, v2), 0.0), 0.004);
     }
     if (between(1.0, -0.8)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(p + vec2(mix(-0.5, 0.5, v), -0.1), st + vec2(mix(-0.5, 0.5, v2), -0.1), 0.008);
+        object.distance += segment(p + vec2(mix(-0.5, 0.5, v), -0.1), st + vec2(mix(-0.5, 0.5, v2), -0.1), 0.008);
     }
     if (between(1.0, -0.6)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(p + vec2(mix(-0.5, 0.5, v), 0.1), st + vec2(mix(-0.5, 0.5, v2), 0.1), 0.012);
+        object.distance += segment(p + vec2(mix(-0.5, 0.5, v), 0.1), st + vec2(mix(-0.5, 0.5, v2), 0.1), 0.012);
     }
 
     if (between(1.0, 0.25)) {
@@ -451,17 +500,17 @@ void main() {
     if (between(1.0, 0.25)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance = line(p + vec2(0.0, mix(-0.5, 0.5, v)), st + vec2(0.0, mix(-0.5, 0.5, v2)), 0.004);
+        object.distance = segment(p + vec2(0.0, mix(-0.5, 0.5, v)), st + vec2(0.0, mix(-0.5, 0.5, v2)), 0.004);
     }
     if (between(1.0, -0.8)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(p + vec2(-0.1, mix(-0.5, 0.5, v)), st + vec2(-0.1, mix(-0.5, 0.5, v2)), 0.008);
+        object.distance += segment(p + vec2(-0.1, mix(-0.5, 0.5, v)), st + vec2(-0.1, mix(-0.5, 0.5, v2)), 0.008);
     }
     if (between(1.0, -0.6)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
-        object.distance += line(p + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.012);
+        object.distance += segment(p + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.012);
     }
 
     if (between(1.0)) {

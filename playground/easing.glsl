@@ -3,15 +3,11 @@
 
 precision highp float;
 
-/***   u n i f o r m s   ***/
-
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 uniform sampler2D u_texture_0;
 uniform vec3 u_color;
-
-/***   c o n s t a n t s   ***/
 
 #define PI_TWO			1.570796326794897
 #define PI				3.141592653589793
@@ -50,50 +46,71 @@ vec2 coord(in vec2 p) {
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
 
-mat2 rotate2d(float a){
-    return mat2(cos(a), -sin(a), sin(a), cos(a));
-}
-
 vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
 vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
 
+float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
+float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
+
+float sCircle(in vec2 p, in float size) {
+    return length(p) * 2.0 - size;
+}
 float circle(in vec2 p, in float size) {
-    float d = length(p) * 2.0;
-    return 1.0 - smoothstep(size - rx, size + rx, d);
+    float d = sCircle(p, size);
+    return fill(d);
 }
 float circle(in vec2 p, in float size, float t) {
-    float d = length(abs(p)) - size / 2.0;
+    float d = sCircle(p, size);
+    return stroke(d, t);
+}
+
+float sLine(in vec2 a, in vec2 b) {
+    vec2 p = b - a;
+    float d = abs(dot(normalize(vec2(p.y, -p.x)), a));
+    return d * 2.0;
+}
+float line(in vec2 a, in vec2 b) {
+    float d = sLine(a, b);
+    return fill(d);
+}
+float line(in vec2 a, in vec2 b, in float t) {
+    float d = sLine(a, b);
+    return stroke(d, t);
+}
+float line(in vec2 p, in float a, in float t) {
+    vec2 b = p + vec2(sin(a), cos(a));
+    return line(p, b, t);
+}
+
+float sPlot(vec2 p, float y){
+    return p.y + y;
+}
+float plot(vec2 p, float y, float t) {
+    float d = sPlot(p, y);
     return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
 }
 
-float line(in vec2 a, in vec2 b, float t) {
+float sSegment(in vec2 a, in vec2 b) {
     vec2 ba = a - b;
     float d = clamp(dot(a, ba) / dot(ba, ba), 0.0, 1.0);
-    d = length(a - ba * d);
-    return smoothstep(t / 2.0 + rx, t / 2.0 - rx, d);
+    return length(a - ba * d) * 2.0;
 }
-
-float plot(vec2 p, float y, float t){
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.y + y));
+float segment(in vec2 a, in vec2 b, float t) {
+    float d = sSegment(a, b);
+    return stroke(d, t);
 }
-
-float rectline(in vec2 p, in float t, in float a) {
-    p *= rotate2d(a);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(p.x));
-}
-float rectline(in vec2 p, in float t) { return rectline (p, t, 0.0); }
-float rectline(in vec2 p) { return rectline (p, 1.0, 0.0); }
 
 float grid(in vec2 p, in float size) {
+    vec2 l = tile(p, size);
     float d = 0.0;
-    d += rectline(tile(p, size), 0.002);
-    d += rectline(tile(p, size), 0.002, PI_TWO);
-    d *= 0.1;
-    p = tile(p, vec2(size * 5.0, size * 5.0));
+    d += line(l, l + vec2(0.0, 0.1), 0.002);
+    d += line(l, l + vec2(0.1, 0.0), 0.002);
+    d *= 0.2;
+    p = tile(p, vec2(size * 5.0));
     float s = size / 10.0;
     float g = 0.0;
-    g += line(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
-    g += line(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
+    g += segment(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
+    g += segment(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
     return d + g;
 }
 
@@ -279,16 +296,15 @@ void main() {
 
     vec3 color = BLACK;
 
-    color = mix(color, WHITE, grid(p, 0.1));
-        
-    // d = plot(p, y, 0.002);
+    color = mix(color, AZUR, grid(p, 0.1));
+    
     float d = plot(p, y - s2, 0.004);
-    color = mix(color, BLUE, d * 0.5);
+    color = mix(color, AZUR, d * 0.5);
 
     vec2 c = vec2(t, v);
     d = 0.0;
-    d += line(p - vec2(s2, s2 + 0.01), p + vec2(-s2, s2 + 0.01), 0.002);
-    d += line(p + vec2(-s2 - 0.01, s2), p + vec2(s2 + 0.01, s2), 0.002);
+    d += segment(p - vec2(s2, s2 + 0.01), p + vec2(-s2, s2 + 0.01), 0.002);
+    d += segment(p + vec2(-s2 - 0.01, s2), p + vec2(s2 + 0.01, s2), 0.002);
     color = mix(color, WHITE, d * 0.3);
     
     d = circle(p - 0.5 + c, 0.02);

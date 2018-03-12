@@ -1,5 +1,5 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Pixel Units examples
+// Title: vscode-glsl-canvas Field example
 
 precision highp float;
 
@@ -45,11 +45,6 @@ vec2 coord(in vec2 p) {
 #define uv gl_FragCoord.xy / u_resolution.xy
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
-vec2 pos(in float x, in float y) { return st + vec2(x * rx, y * rx); }
-vec2 pos(in float x) { return pos(x, x); }
-vec2 pos(in vec2 p) { return pos(p.x, p.y); }
-float pix(in float x) { return x * rx; }
-vec2 pix(in float x, in float y) { return vec2(x * rx, y * rx); }
 
 vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
 vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
@@ -240,46 +235,23 @@ float star(in vec2 p, in float size, in int sides, float t) {
     return stroke(d, t);
 }
 
-float grid(in vec2 p, in float size) {
-    vec2 l = tile(p, size);
-    float d = 0.0;
-    d += line(l, l + vec2(0.0, 0.1), 0.002);
-    d += line(l, l + vec2(0.1, 0.0), 0.002);
-    d *= 0.2;
-    p = tile(p, vec2(size * 5.0));
-    float s = size / 10.0;
-    float g = 0.0;
-    g += segment(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
-    g += segment(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
-    return d + g;
-}
-
 void main() {
+    vec2 p = st;
+
     vec3 color = BLACK;
     
-    color = mix(color, AZUR, grid(st, pix(50.0)));
+    color = field(sArc(p, 0.3, 0.0, PI_TWO));
+    // color = field(sCircle(p, 0.3));
+    // color = field(sHex(p, 0.3));    
+    // color = field(sLine(p, p + vec2(0.1)));
+    // color = field(sSegment(p - vec2(0.15), p + vec2(0.15)));    
+    // color = field(sPie(p, 0.3, 0.0, PI_TWO));
+    // color = field(sPlot(p, -p.x));
+    // color = field(sPoly(p, 0.3, 3));
+    // color = field(sRect(p, vec2(0.3)));
+    // color = field(sRoundrect(p, vec2(0.3), 0.05));
+    // color = field(sSpiral(p, 1.0));
+    // color = field(sStar(p, 0.5, 6));
     
-    float d = 0.0;
-    
-    d = arc(pos(0.0), pix(150.0), 0.0, PI_TWO, pix(2.0));
-    // d = circle(pos(0.0), pix(150.0));
-    // d = circle(pos(0.0), pix(150.0), pix(2.0));    
-    // d = line(pos(-75.0, -75.0), pos(75.0, 75.0), pix(2.0));
-    // d = pie(pos(0.0), pix(150.0), 0.0, PI_TWO);
-    // d = pie(pos(0.0), pix(150.0), 0.0, PI_TWO, pix(2.0));
-    // d = plot(pos(0.0), -st.x, pix(2.0));
-    // d = poly(pos(0.0), pix(150.0), 3);
-    // d = poly(pos(0.0), pix(150.0), 3, pix(2.0));
-    // d = rect(pos(0.0), pix(150.0, 150.0));
-    // d = rect(pos(0.0), pix(150.0, 150.0), pix(2.0));
-    // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0));
-    // d = roundrect(pos(0.0), pix(150.0, 150.0), pix(10.0), pix(2.0));
-    // d = segment(pos(-75.0, -75.0), pos(75.0, 75.0), pix(2.0));
-    // d = spiral(pos(0.0), 1.0);
-    // d = star(pos(0.0), pix(150.0), 5);
-    // d = star(pos(0.0), pix(150.0), 5, pix(2.0));
-    
-    color = mix(color, WHITE, d);
-
     gl_FragColor = vec4(color, 1.0);
 }

@@ -72,17 +72,26 @@ float sSphereOffsetted(vec3 point) {
     return d;
 }
 
-/*
-vec3 draw_line(float d) {
-    const float aa = 3.0;
-    const float thickness = 0.0025;
-    return vec3(smoothstep(0.0, aa / u_resolution.y, max(0.0, abs(d) - thickness)));
+float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
+float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
+
+// field adapted from https://www.shadertoy.com/view/XsyGRW
+vec3 field(float d) {
+    const vec3 c1 = mix(WHITE, YELLOW, 0.4);
+    const vec3 c2 = mix(WHITE, AZUR, 0.7);
+    const vec3 c3 = mix(WHITE, ORANGE, 0.9);
+    const vec3 c4 = BLACK;
+    float d0 = abs(stroke(mod(d + 0.1, 0.2) - 0.1, 0.004));
+    float d1 = abs(stroke(mod(d + 0.025, 0.05) - 0.025, 0.004));
+    float d2 = abs(stroke(d, 0.004));
+    float f = clamp(d * 0.85, 0.0, 1.0);
+    vec3 gradient = mix(c1, c2, f);
+    gradient = mix(gradient, c4, 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0));
+    // gradient -= 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0);          
+    gradient = mix(gradient, c3, fill(d));
+    gradient = mix(gradient, c4, max(d2 * 0.85, max(d0 * 0.25, d1 * 0.06125)) * clamp(1.25 - d, 0.0, 1.0));
+    return gradient;
 }
-    
-float draw_solid(float d) {
-    return smoothstep(0.0, 3.0 / u_resolution.y, max(0.0, d));
-}
-*/
 
 /*
 vec3 draw_distance(float d, vec2 p) {
@@ -129,10 +138,6 @@ vec3 dfDraw(float d, vec2 p) {
     float d1 = abs(1.0 - dfLine(mod(d + 0.025, 0.05) - 0.025).x);
     float d2 = abs(1.0 - dfLine(d).x);
     vec3 rim = vec3(max(d2 * 0.85, max(d0 * 0.25, d1 * 0.06125)));
-    /*
-    gradient -= rim;
-    gradient -= mix(vec3(0.05, 0.35, 0.35), vec3(0.0), dfSolid(d));
-    */
     gradient -= rim * clamp(1.25 - d, 0.0, 1.0);          
     gradient -= 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0);          
     gradient -= mix(vec3(0.05, 0.35, 0.35), vec3(0.0), dfSolid(d));            
@@ -322,13 +327,13 @@ float sRayDistance(Marcher marcher, Camera camera) {
     */
 }
 
-void main() {
+void drawA() {
     vec3 background = BLACK;
 
     // CAMERA
 	float radius = 10.0;
 	Camera camera = getCamera(
-		vec3(radius * sin(u_time * 0.04), 2.0, radius * cos(u_time * 0.04)), // position
+		vec3(radius * sin(u_time * 0.04), 10.0, radius * cos(u_time * 0.04)), // position
 		vec3(0.0, 0.0, 0.0) // target
 	);
 
@@ -345,12 +350,14 @@ void main() {
     // MATERIAL
     vec3 color;
     if (materialId == 1) {
-        vec3 p = marcher.origin + marcher.direction * marcher.distance;
-        color = dfDraw(sSphere(p) - 0.0125, p.xz);
+        float a = sPlane(marcher.origin, marcher.direction, vec3(0.0, 1.0, 0.0), -CAMERA_NEAR);
+        // float a = sPlane2(marcher.origin + marcher.direction, vec4(0.0, 1.0, 0.0, 0.0));
+        vec3 p = marcher.origin + marcher.direction * a;
+        color = field(sSphere(p) - 0.0125);
 
     } else if (materialId == 2) {
-        gl_FragColor = vec4(background, 1.0);   
-        return;
+        // gl_FragColor = vec4(RED, 1.0);   
+        // return;
         vec3 p = marcher.origin + marcher.direction * marcher.distance;
         vec3 normal = vNormal(p, 0.002);
         vec3 ldir = normalize(vec3(0.0, 1.0, 0.2));
@@ -363,41 +370,45 @@ void main() {
     gl_FragColor = vec4(color, 1.0);
 }
 
-void main__() {          
+void drawB() {          
     float time = u_time * 2.5;          
     // vec2 uv = 2.0 * gl_FragCoord.xy / u_resolution - 1.0;  
     vec2 p = st;        
-    vec3 ro = vec3(sin(time), 1.0, cos(time));          
-    vec3 ta = vec3(0.0);          
-    vec3 rd = vRay(ro, ta, p, 2.0);                  
+    vec3 ro = vec3(sin(time) * 2.0, 1.0, cos(time) * 2.0);
+    vec3 ta = vec3(0.0);
+    vec3 rd = vRay(ro, ta, p, 2.0);
     
-    float latest = 1.0;  
-    float d = -1.0;          
+    float latest = 1.0;
+    float d = -1.0;      
     for (int i = 0; i < 30; i++) {            
         if (latest < 0.01 || d > 10.0) {
-            break;           
+            break;          
         }
         d += (latest = sSphere(ro + rd * d));
-    }        
+    }
 
     float tPlane = sPlane(ro, rd, vec3(0.0, 1.0, 0.0), 0.0);
 
-    if (tPlane > -0.5 && tPlane < d) {            
-        vec3 pos = ro + rd * tPlane;            
-        gl_FragColor = vec4(dfDraw(sSphere(pos) - 0.0125, pos.xz), 1);     
+    if (tPlane > -0.5 && tPlane < d) {
+        vec3 pos = ro + rd * tPlane;          
+        gl_FragColor = vec4(dfDraw(sSphere(pos) - 0.0125, pos.xz), 1);
 
     } else if (d > 10.0) {            
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);      
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 
-    } else {            
-        vec3 pos = ro + rd * d;            
-        vec3 normal = vNormal(pos, 0.002);            
-        vec3 ldir = normalize(vec3(0.0, 1.0, 0.2));            
-        float mag = max(0.2, dot(normal, ldir));                    
-        mag = pow(mag, 0.3545);            
-        mag *= 1.75;            
+    } else {
+        vec3 pos = ro + rd * d;
+        vec3 normal = vNormal(pos, 0.002);
+        vec3 ldir = normalize(vec3(0.0, 1.0, 0.2));
+        float mag = max(0.2, dot(normal, ldir));                 
+        mag = pow(mag, 0.3545);
+        mag *= 1.75; 
         //mag = 0.0;                    
         gl_FragColor = vec4(mag * vec3(0.95, 0.45, 0.15), 1.0);            
         gl_FragColor.rgb += lCookTorranceSpecular(ldir, -rd, normal, 1.0, 3.25) * 1.5;          
     }
 }                
+
+void main() {
+    drawA();
+}

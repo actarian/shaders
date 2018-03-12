@@ -1,5 +1,5 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Coords examples
+// Title: vscode-glsl-canvas Blend examples
 
 precision highp float;
 
@@ -52,6 +52,24 @@ vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
 float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
 float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
 
+// field adapted from https://www.shadertoy.com/view/XsyGRW
+vec3 field(float d) {
+    const vec3 c1 = mix(WHITE, YELLOW, 0.4);
+    const vec3 c2 = mix(WHITE, AZUR, 0.7);
+    const vec3 c3 = mix(WHITE, ORANGE, 0.9);
+    const vec3 c4 = BLACK;
+    float d0 = abs(stroke(mod(d + 0.1, 0.2) - 0.1, 0.004));
+    float d1 = abs(stroke(mod(d + 0.025, 0.05) - 0.025, 0.004));
+    float d2 = abs(stroke(d, 0.004));
+    float f = clamp(d * 0.85, 0.0, 1.0);
+    vec3 gradient = mix(c1, c2, f);
+    gradient = mix(gradient, c4, 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0));
+    // gradient -= 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0);          
+    gradient = mix(gradient, c3, fill(d));
+    gradient = mix(gradient, c4, max(d2 * 0.85, max(d0 * 0.25, d1 * 0.06125)) * clamp(1.25 - d, 0.0, 1.0));
+    return gradient;
+}
+
 float sCircle(in vec2 p, in float size) {
     return length(p) * 2.0 - size;
 }
@@ -64,54 +82,37 @@ float circle(in vec2 p, in float size, float t) {
     return stroke(d, t);
 }
 
-float sLine(in vec2 a, in vec2 b) {
-    vec2 p = b - a;
-    float d = abs(dot(normalize(vec2(p.y, -p.x)), a));
-    return d * 2.0;
+/* Blending function */
+/* Smoothmin functions by Inigo Quilez */
+float sBlendExpo(float a, float b, float k) {
+    float res = exp(-k * a) + exp(-k * b);
+    return -log(res) / k;
 }
-float line(in vec2 a, in vec2 b) {
-    float d = sLine(a, b);
-    return fill(d);
+float sBlendPoly(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
 }
-float line(in vec2 a, in vec2 b, in float t) {
-    float d = sLine(a, b);
-    return stroke(d, t);
-}
-float line(in vec2 p, in float a, in float t) {
-    vec2 b = p + vec2(sin(a), cos(a));
-    return line(p, b, t);
-}
-
-float sSegment(in vec2 a, in vec2 b) {
-    vec2 ba = a - b;
-    float d = clamp(dot(a, ba) / dot(ba, ba), 0.0, 1.0);
-    return length(a - ba * d) * 2.0;
-}
-float segment(in vec2 a, in vec2 b, float t) {
-    float d = sSegment(a, b);
-    return stroke(d, t);
-}
-
-float grid(in vec2 p, in float size) {
-    vec2 l = tile(p, size);
-    float d = 0.0;
-    d += line(l, l + vec2(0.0, 0.1), 0.002);
-    d += line(l, l + vec2(0.1, 0.0), 0.002);
-    d *= 0.2;
-    p = tile(p, vec2(size * 5.0));
-    float s = size / 10.0;
-    float g = 0.0;
-    g += segment(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
-    g += segment(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
-    return d + g;
+float sBlendPower(float a, float b, float k) {
+    a = pow(a, k); b = pow(b, k);
+    return pow((a * b) / (a + b), 1.0 / k);
 }
 
 void main() {
+    vec2 p = st;
+
     vec3 color = BLACK;
-
-    color = mix(color, AZUR, grid(st, 0.1));    
-
-    color = mix(color, WHITE, circle(mx - st, 0.1));    
     
+    float a = sCircle(p - cos(u_time) * 0.2, 0.3);
+    float b = sCircle(p + cos(u_time) * 0.2, 0.3);
+
+    float d = 0.0;
+    d = sBlendExpo(a, b, 5.0);
+    // d = sBlendPoly(a, b, 0.5);
+    // d = sBlendPower(a, b, 3.0);
+
+    color = field(d);
+    // color = mix(BLACK, WHITE, fill(d));
+    // color = mix(BLACK, WHITE, stroke(d, 0.01));
+
     gl_FragColor = vec4(color, 1.0);
 }

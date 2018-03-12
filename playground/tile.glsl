@@ -1,17 +1,13 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Shapes examples
+// Title: vscode-glsl-canvas Tile examples
 
 precision highp float;
-
-/***   u n i f o r m s   ***/
 
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 uniform sampler2D u_texture_0;
 uniform vec3 u_color;
-
-/***   c o n s t a n t s   ***/
 
 #define PI_TWO			1.570796326794897
 #define PI				3.141592653589793
@@ -75,10 +71,10 @@ void main() {
     float d = 0.0;
     
     d = poly(tile(st + vec2(-0.1 + t * s.x, 0.01), s), 0.05, 3);
-    color = mix(color, RED, d);
+    color = mix(color, ORANGE, d);
     
     d = rect(tile(st + vec2(0.1, 0.0 + t * s.y), s), vec2(0.07));
-    color = mix(color, BLUE, d);
+    color = mix(color, AZUR, d);
 
     gl_FragColor = vec4(color, 1.0);
 }
