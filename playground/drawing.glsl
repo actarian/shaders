@@ -1,12 +1,12 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Trails examples
+// Title: vscode-glsl-canvas Colors examples
 
 precision highp float;
 
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
-uniform vec2 u_trails[10];
+uniform sampler2D u_texture_0;
 uniform vec3 u_color;
 
 #define PI_TWO			1.570796326794897
@@ -46,9 +46,6 @@ vec2 coord(in vec2 p) {
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
 
-vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
-vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
-
 float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
 float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
 
@@ -69,20 +66,7 @@ vec3 field(float d) {
     gradient = mix(gradient, c4, max(d2 * 0.85, max(d0 * 0.25, d1 * 0.06125)) * clamp(1.25 - d, 0.0, 1.0));
     return gradient;
 }
-
-float sArc(in vec2 p, in float size, in float s, in float e) {
-    e += s;
-    float o = (s + e - PI);
-	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
-	a = clamp(a, min(s, e), max(s, e));
-    vec2 r = vec2(cos(a), sin(a));
-	float d = distance(p, size * 0.5 * r);
-    return d * 2.0;
-}
-float arc(in vec2 p, in float size, in float s, in float e, in float t) {
-    float d = sArc(p, size, s, e);
-    return stroke(d, t);
-}
+vec3 draw(in sampler2D t, in vec2 pos, in vec2 size) { vec2 s = size / 1.0; s.x *= -1.0; return texture2D(t, pos / s + 0.5).rgb; }
 
 float sCircle(in vec2 p, in float size) {
     return length(p) * 2.0 - size;
@@ -96,14 +80,32 @@ float circle(in vec2 p, in float size, float t) {
     return stroke(d, t);
 }
 
-void main() {
-    vec3 color = BLACK;
+/* Boolean functions */
+float sUnion(float a, float b) {
+    return min(a, b);
+}
+float sIntersect(float a, float b) {
+    return max(a, b);
+}
+float sDifference(float a, float b) {
+    return max(a, -b);
+}
 
-    for (int i = 0; i < 10; i++) {
-        float d = circle(st - coord(u_trails[i]), 0.01 * float(10 - i));
-        vec3 c = mix(AZUR, BLACK, float(i) / 10.0);
-        color = mix(color, c, d);
-    }
+vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
+vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
+
+void main() {
+    vec2 p = st;
+
+    vec3 color = BLACK;
+    
+    float d = sCircle(p, 0.5);
+    
+    color = mix(BLACK, WHITE, fill(d));
+    // color = mix(BLACK, WHITE, stroke(d, 0.05));
+    // color = field(d);
+    // color = mix(BLACK, draw(u_texture_0, p + u_time * 0.03, vec2(1.0)), fill(d));
+    // color = mix(BLACK, draw(u_texture_0, p + u_time * 0.03, vec2(1.0)), stroke(d, 0.05));
 
     gl_FragColor = vec4(color, 1.0);
 }

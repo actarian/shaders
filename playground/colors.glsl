@@ -1,12 +1,12 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Trails examples
+// Title: vscode-glsl-canvas Colors examples
 
 precision highp float;
 
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
-uniform vec2 u_trails[10];
+uniform sampler2D u_texture_0;
 uniform vec3 u_color;
 
 #define PI_TWO			1.570796326794897
@@ -70,20 +70,6 @@ vec3 field(float d) {
     return gradient;
 }
 
-float sArc(in vec2 p, in float size, in float s, in float e) {
-    e += s;
-    float o = (s + e - PI);
-	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
-	a = clamp(a, min(s, e), max(s, e));
-    vec2 r = vec2(cos(a), sin(a));
-	float d = distance(p, size * 0.5 * r);
-    return d * 2.0;
-}
-float arc(in vec2 p, in float size, in float s, in float e, in float t) {
-    float d = sArc(p, size, s, e);
-    return stroke(d, t);
-}
-
 float sCircle(in vec2 p, in float size) {
     return length(p) * 2.0 - size;
 }
@@ -96,14 +82,27 @@ float circle(in vec2 p, in float size, float t) {
     return stroke(d, t);
 }
 
-void main() {
-    vec3 color = BLACK;
+/* Boolean functions */
+float sUnion(float a, float b) {
+    return min(a, b);
+}
+float sIntersect(float a, float b) {
+    return max(a, b);
+}
+float sDifference(float a, float b) {
+    return max(a, -b);
+}
 
-    for (int i = 0; i < 10; i++) {
-        float d = circle(st - coord(u_trails[i]), 0.01 * float(10 - i));
-        vec3 c = mix(AZUR, BLACK, float(i) / 10.0);
-        color = mix(color, c, d);
-    }
+void main() {
+    vec2 p = st;
+
+    vec3 color = BLACK;
+    
+    float a = circle(p - cos(u_time) * 0.2, 0.3, 0.05);
+    float b = circle(p + cos(u_time) * 0.2, 0.3, 0.05);
+
+    color += mix(BLACK, RED, a);
+    color += mix(BLACK, GREEN, b);
 
     gl_FragColor = vec4(color, 1.0);
 }
