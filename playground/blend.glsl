@@ -46,8 +46,8 @@ vec2 coord(in vec2 p) {
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
 
-vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
-vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
+vec2 tile(in vec2 p, vec2 w) { return fract(mod(p + w / 2.0, w)) - (w / 2.0); }
+vec2 tile(in vec2 p, float w) { return tile(p, vec2(w)); }
 
 float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
 float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
@@ -70,15 +70,15 @@ vec3 field(float d) {
     return gradient;
 }
 
-float sCircle(in vec2 p, in float size) {
-    return length(p) * 2.0 - size;
+float sCircle(in vec2 p, in float w) {
+    return length(p) * 2.0 - w;
 }
-float circle(in vec2 p, in float size) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w) {
+    float d = sCircle(p, w);
     return fill(d);
 }
-float circle(in vec2 p, in float size, float t) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w, float t) {
+    float d = sCircle(p, w);
     return stroke(d, t);
 }
 
@@ -110,9 +110,9 @@ void main() {
     // d = sBlendPoly(a, b, 0.5);
     // d = sBlendPower(a, b, 3.0);
 
-    color = field(d);
-    // color = mix(BLACK, WHITE, fill(d));
+    color = mix(BLACK, WHITE, fill(d));
     // color = mix(BLACK, WHITE, stroke(d, 0.01));
-
+    // color = field(d);
+    
     gl_FragColor = vec4(color, 1.0);
 }

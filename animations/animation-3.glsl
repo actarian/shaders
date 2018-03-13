@@ -1,17 +1,13 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Easing examples
+// Title: vscode-glsl-canvas Trails examples
 
 precision highp float;
-
-/***   u n i f o r m s   ***/
 
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
-uniform sampler2D u_texture_0;
+uniform vec2 u_trails[10];
 uniform vec3 u_color;
-
-/***   c o n s t a n t s   ***/
 
 #define PI_TWO			1.570796326794897
 #define PI				3.141592653589793
@@ -32,15 +28,6 @@ uniform vec3 u_color;
 #define VIOLET          vec3(0.5, 0.0, 1.0)
 #define AZUR            vec3(0.0, 0.5, 1.0)
 
-float random(in vec2 p) {
-    return fract(sin(dot(p.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-}
-float noise(vec2 p) {
-    vec2 ua = p + u_time * 0.02;
-    vec2 ub = p * 0.8 + u_time * 0.04;
-    float n = texture2D(u_texture_0, ua).r * texture2D(u_texture_0, ub).r;
-    return n;
-}
 vec2 coord(in vec2 p) {
 	p = p / u_resolution.xy;
     if (u_resolution.x > u_resolution.y) {
@@ -54,485 +41,69 @@ vec2 coord(in vec2 p) {
     p *= vec2(-1.0, 1.0);
 	return p;
 }
+#define rx 1.0 / min(u_resolution.x, u_resolution.y)
 #define uv gl_FragCoord.xy / u_resolution.xy
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
-#define ee noise(gl_FragCoord.xy / u_resolution.xy)
-#define rx 1.0 / min(u_resolution.x, u_resolution.y)
-// #define rx ee * 0.05 + 1.0 / min(u_resolution.x, u_resolution.y)
 
-mat2 rotate2d(float a){
-    return mat2(cos(a), -sin(a), sin(a), cos(a));
-}
-
-vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
-vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
+vec2 tile(in vec2 p, vec2 w) { return fract(mod(p + w / 2.0, w)) - (w / 2.0); }
+vec2 tile(in vec2 p, float w) { return tile(p, vec2(w)); }
 
 float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
 float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
 
-float sArc(in vec2 p, in float size, in float s, in float e) {
+// field adapted from https://www.shadertoy.com/view/XsyGRW
+vec3 field(float d) {
+    const vec3 c1 = mix(WHITE, YELLOW, 0.4);
+    const vec3 c2 = mix(WHITE, AZUR, 0.7);
+    const vec3 c3 = mix(WHITE, ORANGE, 0.9);
+    const vec3 c4 = BLACK;
+    float d0 = abs(stroke(mod(d + 0.1, 0.2) - 0.1, 0.004));
+    float d1 = abs(stroke(mod(d + 0.025, 0.05) - 0.025, 0.004));
+    float d2 = abs(stroke(d, 0.004));
+    float f = clamp(d * 0.85, 0.0, 1.0);
+    vec3 gradient = mix(c1, c2, f);
+    gradient = mix(gradient, c4, 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0));
+    // gradient -= 1.0 - clamp(1.25 - d * 0.25, 0.0, 1.0);          
+    gradient = mix(gradient, c3, fill(d));
+    gradient = mix(gradient, c4, max(d2 * 0.85, max(d0 * 0.25, d1 * 0.06125)) * clamp(1.25 - d, 0.0, 1.0));
+    return gradient;
+}
+
+float sArc(in vec2 p, in float w, in float s, in float e) {
     e += s;
     float o = (s + e - PI);
 	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
 	a = clamp(a, min(s, e), max(s, e));
     vec2 r = vec2(cos(a), sin(a));
-	float d = distance(p, size * 0.5 * r);
+	float d = distance(p, w * 0.5 * r);
     return d * 2.0;
 }
-float arc(in vec2 p, in float size, in float s, in float e, in float t) {
-    float d = sArc(p, size, s, e);
+float arc(in vec2 p, in float w, in float s, in float e, in float t) {
+    float d = sArc(p, w, s, e);
     return stroke(d, t);
 }
 
-float sCircle(in vec2 p, in float size) {
-    return length(p) * 2.0 - size;
+float sCircle(in vec2 p, in float w) {
+    return length(p) * 2.0 - w;
 }
-float circle(in vec2 p, in float size) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w) {
+    float d = sCircle(p, w);
     return fill(d);
 }
-float circle(in vec2 p, in float size, float t) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w, float t) {
+    float d = sCircle(p, w);
     return stroke(d, t);
-}
-
-float sHex(in vec2 p, in float size) {
-    vec2 q = abs(p);
-    float d = max((q.x * 0.866025 + q.y * 0.5), q.y) - size * 0.5; // * 0.4330125
-    return d * 2.0;
-}
-float hex(in vec2 p, in float size) {    
-    float d = sHex(p, size);
-    return fill(d);
-}
-float hex(in vec2 p, in float size, in float t) {
-    float d = sHex(p, size);
-    return stroke(d, t);    
-}
-
-float sLine(in vec2 a, in vec2 b) {
-    vec2 p = b - a;
-    float d = abs(dot(normalize(vec2(p.y, -p.x)), a));
-    return d * 2.0;
-}
-float line(in vec2 a, in vec2 b) {
-    float d = sLine(a, b);
-    return fill(d);
-}
-float line(in vec2 a, in vec2 b, in float t) {
-    float d = sLine(a, b);
-    return stroke(d, t);
-}
-float line(in vec2 p, in float a, in float t) {
-    vec2 b = p + vec2(sin(a), cos(a));
-    return line(p, b, t);
-}
-
-float sPie(in vec2 p, in float size, in float s, in float e) {
-    s = mod(s, TWO_PI);
-    e = mod(s + e, TWO_PI);
-    float a = mod(atan(p.y, p.x), TWO_PI);
-    a = abs(step(s, a) - step(e, a));
-    a = s < e ? a : 1.0 - a;
-    float d = length(p);
-    return 1.0 - (a - d * 2.0) - size;
-}
-float pie(in vec2 p, in float size, in float s, in float e) {    
-    float d = sPie(p, size, s, e);
-    return fill(d);
-}
-float pie(in vec2 p, in float size, in float s, in float e, in float t) {
-    float d = sPie(p, size, s, e);
-    return stroke(d, t);    
-}
-
-float sPlot(vec2 p, float y){
-    return p.y + y;
-}
-float plot(vec2 p, float y, float t) {
-    float d = sPlot(p, y);
-    return 1.0 - smoothstep(t / 2.0 - rx, t / 2.0 + rx, abs(d));
-}
-
-float sPoly(in vec2 p, in float size, in int sides) {
-    float a = atan(p.x, p.y) + PI;
-    float r = TWO_PI / float(sides);
-    float d = cos(floor(0.5 + a / r) * r - a) * length(max(abs(p) * 1.0, 0.0));
-    return d * 2.0 - size;
-}
-float poly(in vec2 p, in float size, in int sides) {
-    float d = sPoly(p, size, sides);
-    return fill(d);
-}
-float poly(in vec2 p, in float size, in int sides, in float t) {
-    float d = sPoly(p, size, sides);
-    return stroke(d, t);
-}
-
-float sRect(in vec2 p, in vec2 size) {    
-    float d = max(abs(p.x / size.x), abs(p.y / size.y)) * 2.0;
-    float m = max(size.x, size.y);
-    return d * m - m;
-}
-float rect(in vec2 p, in vec2 size) {
-    float d = sRect(p, size);
-    return fill(d);
-}
-float rect(in vec2 p, in vec2 size, in float t) {
-    float d = sRect(p, size);
-    return stroke(d, t);
-}
-
-float sRoundrect(in vec2 p, in vec2 size, in float border) {
-    vec2 s = size * 0.5 - border;
-    float m = max(s.x, s.y);
-    float d = length(max(abs(p) - s, 0.00001)) * m / border;
-    return (d - m) / m * border * 2.0;
-}
-float roundrect(in vec2 p, in vec2 size, in float border) {
-    float d = sRoundrect(p, size, border);
-    return fill(d);
-}
-float roundrect(in vec2 p, in vec2 size, in float border, in float t) {
-    float d = sRoundrect(p, size, border);
-    return stroke(d, t);
-}
-
-float sSegment(in vec2 a, in vec2 b) {
-    vec2 ba = a - b;
-    float d = clamp(dot(a, ba) / dot(ba, ba), 0.0, 1.0);
-    return length(a - ba * d) * 2.0;
-}
-float segment(in vec2 a, in vec2 b, float t) {
-    float d = sSegment(a, b);
-    return stroke(d, t);
-}
-
-float sSpiral(in vec2 p, in float turns) {
-    float r = dot(p, p);
-    float a = atan(p.y, p.x);
-    float d = abs(sin(fract(log(r) * (turns / 5.0) + a * 0.159)));
-    return d - 0.5;
-}
-float spiral(in vec2 p, in float turns) {    
-    float d = sSpiral(p, turns);
-    return fill(d);
-}
-
-float sStar(in vec2 p, in float size, in int sides) {    
-    float r = 0.5; float s = max(5.0, float(sides)); float m = 0.5 / s; float x = PI_TWO / s * (2.0 - mod(s, 2.0)); 
-    float segment = (atan(p.y, p.x) - x) / TWO_PI * s;    
-    float a = ((floor(segment) + r) / s + mix(m, -m, step(r, fract(segment)))) * TWO_PI;
-    float d = abs(dot(vec2(cos(a + x), sin(a + x)), p)) + m;
-    return (d - rx) * 2.0 - size;
-}
-float star(in vec2 p, in float size, in int sides) {
-    float d = sStar(p, size, sides);
-    return fill(d);
-}
-float star(in vec2 p, in float size, in int sides, float t) {    
-    float d = sStar(p, size, sides);
-    return stroke(d, t);
-}
-
-float grid(in vec2 p, in float size) {
-    vec2 l = tile(p, size);
-    float d = 0.0;
-    d += line(l, l + vec2(0.0, 0.1), 0.002);
-    d += line(l, l + vec2(0.1, 0.0), 0.002);
-    d *= 0.2;
-    p = tile(p, vec2(size * 5.0));
-    float s = size / 10.0;
-    float g = 0.0;
-    g += segment(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
-    g += segment(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);
-    return d + g;
-}
-
-// Easing Equations adapted from Robert Penner easing functions.
-// Back, Bounce, Circular, Cubic, Elastic, Expo, Quad, Quart, Quint, Sine
-
-// Back
-float easexBackIn(float t) {
-    float s = 1.70158;
-    return t * t * ((s + 1.0) * t - s);
-}
-float easeBackOut(float t) {
-    float s = 1.70158;
-    return ((t = t - 1.0) * t * ((s + 1.0) * t + s) + 1.0);
-}
-float easeBackInOut(float t) {
-    float s = 1.70158;
-    if ((t / 2.0) < 1.0) return 0.5 * (t * t * (((s *= (1.525)) + 1.0) * t - s));
-    return 0.5 * ((t -= 2.0) * t * (((s *= (1.525)) + 1.0) * t + s) + 2.0);
-}
-// Bounce
-float easeBounceOut(float t) {
-    if (t < (1.0 / 2.75)) {
-        return (7.5625 * t * t);
-    } else if (t < (2.0 / 2.75)) {
-        return (7.5625 * (t -= (1.5 / 2.75)) * t + 0.75);
-    } else if (t < (2.5 / 2.75)) {
-        return (7.5625 * (t -= (2.25 / 2.75)) * t + 0.9375);
-    } else {
-        return (7.5625 * (t -= (2.625 / 2.75)) * t + 0.984375);
-    }
-}
-float easeBounceIn(float t) {
-    return 1.0 - easeBounceOut(1.0 - t);
-}
-float easeBounceInOut(float t) {
-    if (t < 0.5) return easeBounceIn(t * 2.0) * 0.5;
-    else return easeBounceOut(t * 2.0 - 1.0) * 0.5 + 0.5;
-}
-// Circular
-float easeCircularIn(float t) {
-    return -1.0 * (sqrt(1.0 - t * t) - 1.0);
-}
-float easeCircularOut(float t) {
-    return sqrt(1.0 - (t = t - 1.0) * t);
-}
-float easeCircularInOut(float t) {
-    if ((t / 2.0) < 1.0) return -0.5 * (sqrt(1.0 - t * t) - 1.0);
-    return 0.5 * (sqrt(1.0 - (t -= 2.0) * t) + 1.0);
-}
-// Cubic
-float easeCubicIn(float t) {
-    return t * t * t;
-}
-float easeCubicOut(float t) {
-    return ((t = t - 1.0) * t * t + 1.0);
-}
-float easeCubicInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t * t;
-    return 0.5 * ((t -= 2.0) * t * t + 2.0);
-}
-// Elastic
-float easeElasticIn(float t) {
-    if (t == 0.0) { return 0.0; }
-    if (t == 1.0) { return 1.0; }
-    float p = 0.3;
-    float a = 1.0; 
-    float s = p / 4.0;
-    return -(a * pow(2.0, 10.0 * (t -= 1.0)) * sin((t - s) * TWO_PI / p));
-}
-float easeElasticOut(float t) {
-    if (t == 0.0) { return 0.0; }
-    if (t == 1.0) { return 1.0; }
-    float p = 0.3;
-    float a = 1.0; 
-    float s = p / 4.0;
-    return (a * pow(2.0, -10.0 * t) * sin((t - s) * TWO_PI / p) + 1.0);
-}
-float easeElasticInOut(float t) {
-    if (t == 0.0) { return 0.0; }
-    if ((t / 2.0) == 2.0) { return 1.0; }
-    float p = (0.3 * 1.5);
-    float a = 1.0; 
-    float s = p / 4.0;
-    if (t < 1.0) {
-        return -0.5 * (a * pow(2.0, 10.0 * (t -= 1.0)) * sin((t - s) * TWO_PI / p));
-    }
-    return a * pow(2.0, -10.0 * (t -= 1.0)) * sin((t - s) * TWO_PI / p) * 0.5 + 1.0;
-}
-// Exponential
-float easeExpoIn(float t) {
-    return (t == 0.0) ? 0.0 : pow(2.0, 10.0 * (t - 1.0));
-}
-float easeExpoOut(float t) {
-    return (t == 1.0) ? 1.0 : (-pow(2.0, -10.0 * t) + 1.0);
-}
-float easeExpoInOut(float t) {
-    if (t == 0.0) return 0.0;
-    if (t == 1.0) return 1.0;
-    if ((t / 2.0) < 1.0) return 0.5 * pow(2.0, 10.0 * (t - 1.0));
-    return 0.5 * (-pow(2.0, -10.0 * --t) + 2.0);
-}
-// Quadratic
-float easeQuadIn(float t) {
-    return t * t;
-}
-float easeQuadOut(float t) {
-    return -1.0 * t * (t - 2.0);
-}
-float easeQuadInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t;
-    return -0.5 * ((--t) * (t - 2.0) - 1.0);
-}
-// Quartic
-float easeQuartIn(float t) {
-    return t * t * t * t;
-}
-float easeQuartOut(float t) {
-    return -1.0 * ((t = t - 1.0) * t * t * t - 1.0);
-}
-float easeQuartInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t * t * t;
-    return -0.5 * ((t -= 2.0) * t * t * t - 2.0);
-}
-// Quintic
-float easeQuintIn(float t) {
-    return t * t * t * t * t;
-}
-float easeQuintOut(float t) {
-    return ((t = t - 1.0) * t * t * t * t + 1.0);
-}
-float easeQuintInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t * t * t * t;
-    return 0.5 * ((t -= 2.0) * t * t * t * t + 2.0);
-}
-// Sine
-float easeSineIn(float t) {
-    return -1.0 * cos(t * PI_TWO) + 1.0;
-}
-float easeSineOut(float t) {
-    return sin(t * PI_TWO);
-}
-float easeSineInOut(float t) {
-    return -0.5 * (cos(PI * t) - 1.0);
-}
-
-struct Object { float distance; vec3 color; };
-Object object = Object(0.0, vec3(0.0));
-
-struct Animation { float time; float pow; };
-Animation animation = Animation(0.0, 0.0);
-void totalTime(in float t, in float offset) { animation.time = mod(u_time + offset, t); }
-void totalTime(in float t) { totalTime(t, 0.0); }
-bool between(in float duration, in float offset) {
-    float p = (animation.time - offset) / duration;
-    animation.pow = p;
-    animation.time -= (duration + offset);
-    return (p >= 0.0 && p <= 1.0);
-}
-bool between(in float duration) {
-    return between(duration, 0.0);
 }
 
 void main() {
-    // vec2 p = st - ee * 0.2;
-    vec2 p = st;
-    float v = 0.0;
-    float v2 = 0.0;
+    vec3 color = vec3(0.0, 0.6, 0.9);
 
-    totalTime(12.0);
-        
-    if (between(0.5)) {
-        v = easeElasticOut(animation.pow);
-        object.distance = circle(p, 0.1 + 0.1 * v);
+    for (int i = 0; i < 10; i++) {
+        float d = circle(st - coord(u_trails[i]), 0.01 * float(10 - i));
+        vec3 c = mix(WHITE, BLACK, float(i) / 10.0);
+        color = mix(color, c, d);
     }
 
-    if (between(0.5, -0.25)) {
-        v = easeElasticOut(animation.pow);
-        object.distance = rect(p * rotate2d(PI_TWO / 2.0 * v), vec2(0.3), 0.04);
-    }
-
-    if (between(0.25, -0.25)) {
-        object.distance = circle(p, 0.2 + 1.3 * animation.pow, 0.1) * (1.0 - animation.pow);
-    }
-
-    if (between(0.5, 0.25)) {
-        v = easeElasticOut(animation.pow);
-        object.distance = line(p, 0.0, 0.5 * v);
-    }
-
-    if (between(0.25)) {
-        v = easeSineInOut(animation.pow);
-        object.distance = line(p, PI_TWO / 2.0 * v, 0.5);
-    }
-
-    if (between(0.5)) {
-        v = easeBounceOut(animation.pow);
-        object.distance = line(p, PI_TWO / 2.0, 0.5 * (1.0 - v));
-    }
-
-    if (between(1.0, 0.25)) {
-        v = easeQuintOut(animation.pow);
-        v2 = easeQuintIn(animation.pow);
-        object.distance = segment(p + vec2(mix(-0.5, 0.5, v), 0.0), st + vec2(mix(-0.5, 0.5, v2), 0.0), 0.004);
-    }
-    if (between(1.0, -0.8)) {
-        v = easeQuintOut(animation.pow);
-        v2 = easeQuintIn(animation.pow);
-        object.distance += segment(p + vec2(mix(-0.5, 0.5, v), -0.1), st + vec2(mix(-0.5, 0.5, v2), -0.1), 0.008);
-    }
-    if (between(1.0, -0.6)) {
-        v = easeQuintOut(animation.pow);
-        v2 = easeQuintIn(animation.pow);
-        object.distance += segment(p + vec2(mix(-0.5, 0.5, v), 0.1), st + vec2(mix(-0.5, 0.5, v2), 0.1), 0.012);
-    }
-
-    if (between(1.0, 0.25)) {
-        v = easeBounceOut(animation.pow);
-        object.distance = circle(p + vec2(0.0, mix(-0.3, 0.3, v)), 0.2, 0.02);
-    }
-
-    if (between(0.5)) {
-        v = easeSineOut(animation.pow);
-        object.distance = circle(p + vec2(0.3 * cos(PI_TWO + v * 2.0 * PI), 0.3 * sin(PI_TWO + v * 2.0 * PI)), 0.2, 0.02);
-    }
-
-    if (between(1.0)) {
-        v = easeElasticOut(animation.pow);
-        object.distance = circle(p + vec2(0.0, mix(0.3, 0.0, v)), 0.2 + 0.4 * v, 0.02 + 0.06 * v);
-    }
-
-    if (between(0.15)) {
-        v = easeSineOut(animation.pow);
-        object.distance = circle(p, 0.6 - 0.5 * v, 0.08) * (1.0 - v);
-    }
-
-    if (between(0.5)) {
-        v = easeElasticOut(animation.pow);
-        object.distance = poly(p * rotate2d(PI), 0.1 + 0.2 * v, 3, 0.06);
-    }
-
-    if (between(0.35)) {
-        v = easeCircularOut(animation.pow);
-        object.distance = poly(p * rotate2d(PI) + vec2(0.0, mix(0.6, 0.0, v)), 0.1, 3, 0.02);
-    }
-    if (between(0.35)) {
-        v = easeCircularIn(animation.pow);
-        object.distance = poly(p * rotate2d(PI) + vec2(0.0, mix(0.0, -0.6, v)), 0.1, 3, 0.02);
-    }
-
-    if (between(1.0, 0.25)) {
-        v = easeQuintOut(animation.pow);
-        v2 = easeQuintIn(animation.pow);
-        object.distance = segment(p + vec2(0.0, mix(-0.5, 0.5, v)), st + vec2(0.0, mix(-0.5, 0.5, v2)), 0.004);
-    }
-    if (between(1.0, -0.8)) {
-        v = easeQuintOut(animation.pow);
-        v2 = easeQuintIn(animation.pow);
-        object.distance += segment(p + vec2(-0.1, mix(-0.5, 0.5, v)), st + vec2(-0.1, mix(-0.5, 0.5, v2)), 0.008);
-    }
-    if (between(1.0, -0.6)) {
-        v = easeQuintOut(animation.pow);
-        v2 = easeQuintIn(animation.pow);
-        object.distance += segment(p + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.012);
-    }
-
-    if (between(1.0)) {
-        v = easeCircularIn(animation.pow);
-        object.distance = star(p, 0.5, 6 + int((1.0 - animation.pow) * 44.0), 0.04);
-    }
-
-    if (between(0.5)) {
-        v = easeCircularIn(animation.pow);
-        object.distance = star(p + vec2(0.0, mix(0.0, 0.5, v)), 0.5, 6, 0.04) * (1.0 - animation.pow);
-    }
-
-    vec3 color = BLACK + 0.015;
-    
-    // object.color = WHITE;
-    object.color = vec3(0.0, 0.6, 0.9);
-    // object.color += vec3(abs(sin(p.x)), abs(cos(u_time * 0.1)), abs(cos(p.y)));
-    // color = mix(color, WHITE, grid(0.1));
-    
-    object.color += ee * 0.1 - random(st) * length(st) * 0.5;
-    
-    color = mix(color, object.color, object.distance);
-    
     gl_FragColor = vec4(color, 1.0);
 }

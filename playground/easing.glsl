@@ -46,21 +46,21 @@ vec2 coord(in vec2 p) {
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
 
-vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
-vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
+vec2 tile(in vec2 p, vec2 w) { return fract(mod(p + w / 2.0, w)) - (w / 2.0); }
+vec2 tile(in vec2 p, float w) { return tile(p, vec2(w)); }
 
 float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
 float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
 
-float sCircle(in vec2 p, in float size) {
-    return length(p) * 2.0 - size;
+float sCircle(in vec2 p, in float w) {
+    return length(p) * 2.0 - w;
 }
-float circle(in vec2 p, in float size) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w) {
+    float d = sCircle(p, w);
     return fill(d);
 }
-float circle(in vec2 p, in float size, float t) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w, float t) {
+    float d = sCircle(p, w);
     return stroke(d, t);
 }
 
@@ -100,14 +100,14 @@ float segment(in vec2 a, in vec2 b, float t) {
     return stroke(d, t);
 }
 
-float grid(in vec2 p, in float size) {
-    vec2 l = tile(p, size);
+float grid(in vec2 p, in float w) {
+    vec2 l = tile(p, w);
     float d = 0.0;
     d += line(l, l + vec2(0.0, 0.1), 0.002);
     d += line(l, l + vec2(0.1, 0.0), 0.002);
     d *= 0.2;
-    p = tile(p, vec2(size * 5.0));
-    float s = size / 10.0;
+    p = tile(p, vec2(w * 5.0));
+    float s = w / 10.0;
     float g = 0.0;
     g += segment(p + vec2(-s, 0.0), p + vec2(s, 0.0), 0.004);
     g += segment(p + vec2(0.0, -s), p + vec2(0.0, s), 0.004);

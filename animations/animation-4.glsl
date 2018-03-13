@@ -1,13 +1,17 @@
 // Author: Luca Zampetti
-// Title: vscode-glsl-canvas Animation example
+// Title: vscode-glsl-canvas Easing examples
 
 precision highp float;
+
+/***   u n i f o r m s   ***/
 
 uniform vec2 u_resolution;
 uniform vec2 u_mouse;
 uniform float u_time;
 uniform sampler2D u_texture_0;
 uniform vec3 u_color;
+
+/***   c o n s t a n t s   ***/
 
 #define PI_TWO			1.570796326794897
 #define PI				3.141592653589793
@@ -28,6 +32,15 @@ uniform vec3 u_color;
 #define VIOLET          vec3(0.5, 0.0, 1.0)
 #define AZUR            vec3(0.0, 0.5, 1.0)
 
+float random(in vec2 p) {
+    return fract(sin(dot(p.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+float noise(vec2 p) {
+    vec2 ua = p + u_time * 0.02;
+    vec2 ub = p * 0.8 + u_time * 0.04;
+    float n = texture2D(u_texture_0, ua).r * texture2D(u_texture_0, ub).r;
+    return n;
+}
 vec2 coord(in vec2 p) {
 	p = p / u_resolution.xy;
     if (u_resolution.x > u_resolution.y) {
@@ -44,7 +57,9 @@ vec2 coord(in vec2 p) {
 #define uv gl_FragCoord.xy / u_resolution.xy
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
+#define ee noise(gl_FragCoord.xy / u_resolution.xy)
 #define rx 1.0 / min(u_resolution.x, u_resolution.y)
+// #define rx ee * 0.05 + 1.0 / min(u_resolution.x, u_resolution.y)
 
 mat2 rotate2d(float a){
     return mat2(cos(a), -sin(a), sin(a), cos(a));
@@ -169,18 +184,18 @@ float rect(in vec2 p, in vec2 w, in float t) {
     return stroke(d, t);
 }
 
-float sRoundrect(in vec2 p, in vec2 w, in float corner) {
-    vec2 s = w * 0.5 - corner;
+float sRoundrect(in vec2 p, in vec2 w, in float border) {
+    vec2 s = w * 0.5 - border;
     float m = max(s.x, s.y);
-    float d = length(max(abs(p) - s, 0.00001)) * m / corner;
-    return (d - m) / m * corner * 2.0;
+    float d = length(max(abs(p) - s, 0.00001)) * m / border;
+    return (d - m) / m * border * 2.0;
 }
-float roundrect(in vec2 p, in vec2 w, in float corner) {
-    float d = sRoundrect(p, w, corner);
+float roundrect(in vec2 p, in vec2 w, in float border) {
+    float d = sRoundrect(p, w, border);
     return fill(d);
 }
-float roundrect(in vec2 p, in vec2 w, in float corner, in float t) {
-    float d = sRoundrect(p, w, corner);
+float roundrect(in vec2 p, in vec2 w, in float border, in float t) {
+    float d = sRoundrect(p, w, border);
     return stroke(d, t);
 }
 
@@ -396,89 +411,90 @@ bool between(in float duration) {
 }
 
 void main() {
-    vec2 p = st; float v = 0.0; float v2 = 0.0;
+    // vec2 p = st - ee * 0.2;
+    vec2 p = st;
+    float v = 0.0;
+    float v2 = 0.0;
 
+    object.color = BLACK;
+    
     totalTime(12.0);
         
     if (between(0.5)) {
         v = easeElasticOut(animation.pow);
         object.distance = circle(p, 0.1 + 0.1 * v);
     }
-
     if (between(0.5, -0.25)) {
         v = easeElasticOut(animation.pow);
         object.distance = rect(p * rotate2d(PI_TWO / 2.0 * v), vec2(0.3), 0.04);
     }
-
     if (between(0.25, -0.25)) {
         object.distance = circle(p, 0.2 + 1.3 * animation.pow, 0.1) * (1.0 - animation.pow);
     }
-
     if (between(0.5, 0.25)) {
         v = easeElasticOut(animation.pow);
         object.distance = line(p, 0.0, 0.5 * v);
+        object.color = WHITE;
     }
-
     if (between(0.25)) {
         v = easeSineInOut(animation.pow);
         object.distance = line(p, PI_TWO / 2.0 * v, 0.5);
+        object.color = WHITE;
     }
-
     if (between(0.5)) {
         v = easeBounceOut(animation.pow);
         object.distance = line(p, PI_TWO / 2.0, 0.5 * (1.0 - v));
+        object.color = WHITE;
     }
-
     if (between(1.0, 0.25)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
         object.distance = segment(p + vec2(mix(-0.5, 0.5, v), 0.0), st + vec2(mix(-0.5, 0.5, v2), 0.0), 0.004);
+        object.color = WHITE;
     }
     if (between(1.0, -0.8)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
         object.distance += segment(p + vec2(mix(-0.5, 0.5, v), -0.1), st + vec2(mix(-0.5, 0.5, v2), -0.1), 0.008);
+        object.color = WHITE;
     }
     if (between(1.0, -0.6)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
         object.distance += segment(p + vec2(mix(-0.5, 0.5, v), 0.1), st + vec2(mix(-0.5, 0.5, v2), 0.1), 0.012);
+        object.color = WHITE;
     }
-
     if (between(1.0, 0.25)) {
         v = easeBounceOut(animation.pow);
         object.distance = circle(p + vec2(0.0, mix(-0.3, 0.3, v)), 0.2, 0.02);
     }
-
     if (between(0.5)) {
         v = easeSineOut(animation.pow);
         object.distance = circle(p + vec2(0.3 * cos(PI_TWO + v * 2.0 * PI), 0.3 * sin(PI_TWO + v * 2.0 * PI)), 0.2, 0.02);
     }
-
     if (between(1.0)) {
         v = easeElasticOut(animation.pow);
         object.distance = circle(p + vec2(0.0, mix(0.3, 0.0, v)), 0.2 + 0.4 * v, 0.02 + 0.06 * v);
     }
-
     if (between(0.15)) {
         v = easeSineOut(animation.pow);
         object.distance = circle(p, 0.6 - 0.5 * v, 0.08) * (1.0 - v);
     }
-
     if (between(0.5)) {
         v = easeElasticOut(animation.pow);
         object.distance = poly(p * rotate2d(PI), 0.1 + 0.2 * v, 3, 0.06);
+        object.color = WHITE;
     }
-
     if (between(0.35)) {
         v = easeCircularOut(animation.pow);
         object.distance = poly(p * rotate2d(PI) + vec2(0.0, mix(0.6, 0.0, v)), 0.1, 3, 0.02);
+        object.color = WHITE;
     }
     if (between(0.35)) {
         v = easeCircularIn(animation.pow);
         object.distance = poly(p * rotate2d(PI) + vec2(0.0, mix(0.0, -0.6, v)), 0.1, 3, 0.02);
+        object.color = WHITE;
     }
-
     if (between(1.0, 0.25)) {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
@@ -494,22 +510,30 @@ void main() {
         v2 = easeQuintIn(animation.pow);
         object.distance += segment(p + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.012);
     }
-
     if (between(1.0)) {
         v = easeCircularIn(animation.pow);
         object.distance = star(p, 0.5, 6 + int((1.0 - animation.pow) * 44.0), 0.04);
+        object.color = WHITE;
     }
-
     if (between(0.5)) {
         v = easeCircularIn(animation.pow);
         object.distance = star(p + vec2(0.0, mix(0.0, 0.5, v)), 0.5, 6, 0.04) * (1.0 - animation.pow);
+        object.color = WHITE;
     }
 
-    vec3 color = BLACK;
-    
-    object.color = WHITE;
+    /*
+    vec3 color = BLACK + 0.015;
+    // object.color = WHITE;
+    object.color = vec3(0.0, 0.6, 0.9);
+    // object.color += vec3(abs(sin(p.x)), abs(cos(u_time * 0.1)), abs(cos(p.y)));
+    // color = mix(color, WHITE, grid(0.1));
+    object.color += ee * 0.1 - random(st) * length(st) * 0.5;
+    */
+
+    vec3 color = vec3(0.0, 0.6, 0.9);
+    color += ee * 0.1 - random(st) * length(st) * 0.5;
     
     color = mix(color, object.color, object.distance);
-
+    
     gl_FragColor = vec4(color, 1.0);
 }

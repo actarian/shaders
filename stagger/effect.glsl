@@ -81,8 +81,8 @@ float polygon(vec2 p, int sides) {
     return 1.0 - smoothstep(0.1, 0.1001, d);
 }
 
-float rect(vec2 p, vec2 size) {
-    vec2 s2 = size / -2.0;
+float rect(vec2 p, vec2 w) {
+    vec2 s2 = w / -2.0;
     vec2 bl = smoothstep(vec2(s2 - 0.001), vec2(s2), p);
     vec2 tr = smoothstep(vec2(s2 + 1.0), vec2(s2 + 1.0 + 0.001), 1.0 - p);
     return bl.x * bl.y * tr.x * tr.y;
@@ -294,9 +294,9 @@ float shortestDistanceToSurface(vec3 eye, vec3 marchingDirection, float start, f
     return end;
 }
 
-vec3 rayDirection(float fieldOfView, vec2 p, vec2 size) {
-    vec2 xy = p - size / 2.0;
-    float z = size.y / tan(radians(fieldOfView) / 2.0);
+vec3 rayDirection(float fieldOfView, vec2 p, vec2 w) {
+    vec2 xy = p - w / 2.0;
+    float z = w.y / tan(radians(fieldOfView) / 2.0);
     return normalize(vec3(xy, -z));
 }
 */

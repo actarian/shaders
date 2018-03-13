@@ -66,17 +66,17 @@ vec3 field(float d) {
     gradient = mix(gradient, c4, max(d2 * 0.85, max(d0 * 0.25, d1 * 0.06125)) * clamp(1.25 - d, 0.0, 1.0));
     return gradient;
 }
-vec3 draw(in sampler2D t, in vec2 pos, in vec2 size) { vec2 s = size / 1.0; s.x *= -1.0; return texture2D(t, pos / s + 0.5).rgb; }
+vec3 draw(in sampler2D t, in vec2 pos, in vec2 w) { vec2 s = w / 1.0; s.x *= -1.0; return texture2D(t, pos / s + 0.5).rgb; }
 
-float sCircle(in vec2 p, in float size) {
-    return length(p) * 2.0 - size;
+float sCircle(in vec2 p, in float w) {
+    return length(p) * 2.0 - w;
 }
-float circle(in vec2 p, in float size) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w) {
+    float d = sCircle(p, w);
     return fill(d);
 }
-float circle(in vec2 p, in float size, float t) {
-    float d = sCircle(p, size);
+float circle(in vec2 p, in float w, float t) {
+    float d = sCircle(p, w);
     return stroke(d, t);
 }
 
@@ -91,11 +91,11 @@ float sDifference(float a, float b) {
     return max(a, -b);
 }
 
-vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
-vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
+vec2 tile(in vec2 p, vec2 w) { return fract(mod(p + w / 2.0, w)) - (w / 2.0); }
+vec2 tile(in vec2 p, float w) { return tile(p, vec2(w)); }
 
 void main() {
-    vec2 p = st;
+    vec2 p = st + cos(u_time + st.x) * 0.2;
 
     vec3 color = BLACK;
     

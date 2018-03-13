@@ -46,19 +46,19 @@ vec2 coord(in vec2 p) {
 #define st coord(gl_FragCoord.xy)
 #define mx coord(u_mouse)
 
-vec2 tile(in vec2 p, vec2 size) { return fract(mod(p + size / 2.0, size)) - (size / 2.0); }
-vec2 tile(in vec2 p, float size) { return tile(p, vec2(size)); }
+vec2 tile(in vec2 p, vec2 w) { return fract(mod(p + w / 2.0, w)) - (w / 2.0); }
+vec2 tile(in vec2 p, float w) { return tile(p, vec2(w)); }
 
-float poly(in vec2 p, in float size, in int sides) {
+float poly(in vec2 p, in float w, in int sides) {
     float a = atan(p.x, p.y) + PI;
     float r = TWO_PI / float(sides);
     float d = cos(floor(0.5 + a / r) * r - a) * length(max(abs(p) * 1.0, 0.0));
-    return 1.0 - smoothstep(size / 2.0 - rx, size / 2.0 + rx, d);
+    return 1.0 - smoothstep(w / 2.0 - rx, w / 2.0 + rx, d);
 }
 
-float rect(in vec2 p, in vec2 size) {
-    size /= 2.0;
-    float d = length(max(abs(p) -size, 0.0));
+float rect(in vec2 p, in vec2 w) {
+    w /= 2.0;
+    float d = length(max(abs(p) -w, 0.0));
     return 1.0 - smoothstep(0.0, 0.0 + rx * 2.0, d);
 }
 
@@ -70,11 +70,11 @@ void main() {
     float t = fract(u_time * 0.5);
     float d = 0.0;
     
-    d = poly(tile(st + vec2(-0.1 + t * s.x, 0.01), s), 0.05, 3);
-    color = mix(color, ORANGE, d);
+    d = poly(tile(st + vec2(-0.1 + t * s.x, 0.01), s), 0.07, 3);
+    color += mix(BLACK, RED, d);
     
-    d = rect(tile(st + vec2(0.1, 0.0 + t * s.y), s), vec2(0.07));
-    color = mix(color, AZUR, d);
+    d = rect(tile(st + vec2(0.1, 0.0 + t * s.y), s), vec2(0.1));
+    color += mix(BLACK, BLUE, d);
 
     gl_FragColor = vec4(color, 1.0);
 }
