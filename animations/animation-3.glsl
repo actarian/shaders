@@ -97,7 +97,7 @@ float circle(in vec2 p, in float w, float t) {
 }
 
 void main() {
-    vec3 color = vec3(0.0, 0.6, 0.9);
+    vec3 color = AZUR;
 
     for (int i = 0; i < 10; i++) {
         float d = circle(st - coord(u_trails[i]), 0.01 * float(10 - i));

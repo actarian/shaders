@@ -255,9 +255,9 @@ float grid(in vec2 p, in float w) {
 }
 
 void main() {
-    vec3 color = BLACK;
+    vec3 color = AZUR;
     
-    color = mix(color, AZUR, grid(st, size(50.0)));
+    color = mix(color, BLACK, grid(st, size(50.0)));
     
     float d = 0.0;
     
