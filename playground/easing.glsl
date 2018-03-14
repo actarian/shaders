@@ -127,8 +127,9 @@ float easeBackOut(float t) {
     return ((t = t - 1.0) * t * ((s + 1.0) * t + s) + 1.0);
 }
 float easeBackInOut(float t) {
+    t *= 2.0;
     float s = 1.70158;
-    if ((t / 2.0) < 1.0) return 0.5 * (t * t * (((s *= (1.525)) + 1.0) * t - s));
+    if (t < 1.0) return 0.5 * (t * t * (((s *= (1.525)) + 1.0) * t - s));
     return 0.5 * ((t -= 2.0) * t * (((s *= (1.525)) + 1.0) * t + s) + 2.0);
 }
 // Bounce
@@ -158,7 +159,8 @@ float easeCircularOut(float t) {
     return sqrt(1.0 - (t = t - 1.0) * t);
 }
 float easeCircularInOut(float t) {
-    if ((t / 2.0) < 1.0) return -0.5 * (sqrt(1.0 - t * t) - 1.0);
+    t = t * 2.0;
+    if ((t) < 1.0) return -0.5 * (sqrt(1.0 - t * t) - 1.0);
     return 0.5 * (sqrt(1.0 - (t -= 2.0) * t) + 1.0);
 }
 // Cubic
@@ -169,7 +171,8 @@ float easeCubicOut(float t) {
     return ((t = t - 1.0) * t * t + 1.0);
 }
 float easeCubicInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t * t;
+    t = t * 2.0;
+    if (t < 1.0) return 0.5 * t * t * t;
     return 0.5 * ((t -= 2.0) * t * t + 2.0);
 }
 // Elastic
@@ -190,6 +193,7 @@ float easeElasticOut(float t) {
     return (a * pow(2.0, -10.0 * t) * sin((t - s) * TWO_PI / p) + 1.0);
 }
 float easeElasticInOut(float t) {
+    t = t * 2.0;
     if (t == 0.0) { return 0.0; }
     if ((t / 2.0) == 2.0) { return 1.0; }
     float p = (0.3 * 1.5);
@@ -208,9 +212,10 @@ float easeExpoOut(float t) {
     return (t == 1.0) ? 1.0 : (-pow(2.0, -10.0 * t) + 1.0);
 }
 float easeExpoInOut(float t) {
+    t = t * 2.0;
     if (t == 0.0) return 0.0;
     if (t == 1.0) return 1.0;
-    if ((t / 2.0) < 1.0) return 0.5 * pow(2.0, 10.0 * (t - 1.0));
+    if (t < 1.0) return 0.5 * pow(2.0, 10.0 * (t - 1.0));
     return 0.5 * (-pow(2.0, -10.0 * --t) + 2.0);
 }
 // Quadratic
@@ -221,7 +226,8 @@ float easeQuadOut(float t) {
     return -1.0 * t * (t - 2.0);
 }
 float easeQuadInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t;
+    t = t * 2.0;
+    if (t < 1.0) return 0.5 * t * t;
     return -0.5 * ((--t) * (t - 2.0) - 1.0);
 }
 // Quartic
@@ -232,7 +238,8 @@ float easeQuartOut(float t) {
     return -1.0 * ((t = t - 1.0) * t * t * t - 1.0);
 }
 float easeQuartInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t * t * t;
+    t = t * 2.0;
+    if (t < 1.0) return 0.5 * t * t * t * t;
     return -0.5 * ((t -= 2.0) * t * t * t - 2.0);
 }
 // Quintic
@@ -243,7 +250,8 @@ float easeQuintOut(float t) {
     return ((t = t - 1.0) * t * t * t * t + 1.0);
 }
 float easeQuintInOut(float t) {
-    if ((t / 2.0) < 1.0) return 0.5 * t * t * t * t * t;
+    t = t * 2.0;
+    if (t < 1.0) return 0.5 * t * t * t * t * t;
     return 0.5 * ((t -= 2.0) * t * t * t * t + 2.0);
 }
 // Sine
@@ -254,6 +262,7 @@ float easeSineOut(float t) {
     return sin(t * PI_TWO);
 }
 float easeSineInOut(float t) {
+    t = t * 2.0;
     return -0.5 * (cos(PI * t) - 1.0);
 }
 
