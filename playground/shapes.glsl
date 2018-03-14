@@ -70,35 +70,13 @@ vec3 field(float d) {
     return gradient;
 }
 
-/*
-float nArc(in vec2 p, in float w) {
-    float r = length(p) * 2.0;    
-    float d = r - w;
-    float a = atan(p.y, p.x);
-    // a = clamp(a, 0.0, PI_TWO);
-    float n = 1.0 - (a / TWO_PI + 0.5) * r;
-    d = max(d, -n);
-    return n;
-}
-*/
-
 float sArc(in vec2 p, in float w, in float s, in float e) {    
+    float a = distance(p, w * 0.5 * vec2(cos(s), sin(s)));
     float x = -PI;
     p *= mat2(cos(x - s), -sin(x - s), sin(x - s), cos(x - s));
-    float a = clamp(atan(p.y, p.x), x, x + e);
-    vec2 r = vec2(cos(a), sin(a));
-	float d = distance(p, w * 0.5 * r);
-    return d * 2.0;
-}
-
-float ssArc(in vec2 p, in float w, in float s, in float e) {
-    e += s;
-    float o = (s + e - PI);
-	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
-	a = clamp(a, min(s, e), max(s, e));
-    vec2 r = vec2(cos(a), sin(a));
-	float d = distance(p, w * 0.5 * r);
-    return d * 2.0;
+    float b = clamp(atan(p.y, p.x), x, x + e);
+    b = distance(p, w * 0.5 * vec2(cos(b), sin(b)));
+    return min(a, b) * 2.0;
 }
 float arc(in vec2 p, in float w, in float s, in float e, in float t) {
     float d = sArc(p, w, s, e);
@@ -299,12 +277,12 @@ void main() {
     // d = star(p, 0.5, 6);
     // d = star(p, 0.5, 6, 0.004);
     
-    float a = TWO_PI * fract(u_time * 0.1);
-    d = sArc(p, 0.4, a, a);
-    d = stroke(d, 0.004);
-    // d = stroke(nArc(p, 0.4, 0.0, a), 0.004);
-    
+    float t = fract(u_time * 0.2);
+    d = sArc(p, 0.3, TWO_PI * t, TWO_PI * t);
+    d = stroke(d, 0.15);
+
     color = mix(color, WHITE, d);
-        
+    // color = field(d);
+
     gl_FragColor = vec4(color, 1.0);
 }

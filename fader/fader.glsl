@@ -45,7 +45,7 @@ void main() {
     // time
     float v = fract(u_time * 0.2);
     // easing
-    v = easeSineInOut(v);
+    v = easeSineOut(v);
     // mouse
     // v = 1.0 - (mx.x + 0.5);
     // mask

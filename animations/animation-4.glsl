@@ -437,7 +437,7 @@ void main() {
         object.color = WHITE;
     }
     if (between(0.25)) {
-        v = easeSineInOut(animation.pow);
+        v = easeSineOut(animation.pow);
         object.distance = line(p, PI_TWO / 2.0 * v, 0.5);
         object.color = WHITE;
     }
