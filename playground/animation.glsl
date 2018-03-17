@@ -56,14 +56,13 @@ vec2 tile(in vec2 p, float w) { return tile(p, vec2(w)); }
 float fill(in float d) { return 1.0 - smoothstep(0.0, rx * 2.0, d); }
 float stroke(in float d, in float t) { return 1.0 - smoothstep(t - rx * 1.5, t + rx * 1.5, abs(d)); }
 
-float sArc(in vec2 p, in float w, in float s, in float e) {
-    e += s;
-    float o = (s + e - PI);
-	float a = mod(atan(p.y, p.x) - o, TWO_PI) + o;
-	a = clamp(a, min(s, e), max(s, e));
-    vec2 r = vec2(cos(a), sin(a));
-	float d = distance(p, w * 0.5 * r);
-    return d * 2.0;
+float sArc(in vec2 p, in float w, in float s, in float e) {    
+    float a = distance(p, w * 0.5 * vec2(cos(s), sin(s)));
+    float x = -PI;
+    p *= mat2(cos(x - s), -sin(x - s), sin(x - s), cos(x - s));
+    float b = clamp(atan(p.y, p.x), x, x + e);
+    b = distance(p, w * 0.5 * vec2(cos(b), sin(b)));
+    return min(a, b) * 2.0;
 }
 float arc(in vec2 p, in float w, in float s, in float e, in float t) {
     float d = sArc(p, w, s, e);
@@ -398,7 +397,7 @@ bool between(in float duration) {
 void main() {
     vec2 p = st; float v = 0.0; float v2 = 0.0;
 
-    totalTime(12.0);
+    totalTime(14.0);
         
     if (between(0.5)) {
         v = easeElasticOut(animation.pow);
@@ -493,6 +492,19 @@ void main() {
         v = easeQuintOut(animation.pow);
         v2 = easeQuintIn(animation.pow);
         object.distance += segment(p + vec2(0.1, mix(-0.5, 0.5, v)), st + vec2(0.1, mix(-0.5, 0.5, v2)), 0.012);
+    }
+
+    if (between(1.6, 0.25)) {
+        v = easeQuintOut(animation.pow);
+        object.distance = arc(p, 0.3, PI_TWO + v * 0.1, TWO_PI * v * 0.7, 0.08);
+    }
+    if (between(1.4, -1.4)) {
+        v = easeQuartOut(animation.pow);
+        object.distance += arc(p, 0.46, PI_TWO + v * 0.1, TWO_PI * v * 0.8, 0.04);
+    }
+    if (between(1.2, -1.2)) {
+        v = easeQuadOut(animation.pow);
+        object.distance += arc(p, 0.56, PI_TWO + v * 0.1, TWO_PI * v * 0.9, 0.02);
     }
 
     if (between(1.0)) {

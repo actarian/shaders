@@ -277,12 +277,7 @@ void main() {
     // d = star(p, 0.5, 6);
     // d = star(p, 0.5, 6, 0.004);
     
-    float t = fract(u_time * 0.2);
-    d = sArc(p, 0.3, TWO_PI * t, TWO_PI * t);
-    d = stroke(d, 0.15);
-
     color = mix(color, WHITE, d);
-    // color = field(d);
 
     gl_FragColor = vec4(color, 1.0);
 }
