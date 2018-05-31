@@ -5,7 +5,9 @@
         "2": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/noise/noise.png",
         "3": "https://rawgit.com/actarian/plausible-brdf-shader/master/textures/checker.png",
         "4": "https://rawgit.com/actarian/shaders/master/fader/fader.jpg",
-        "5": "https://rawgit.com/actarian/shaders/master/fader/fader-mask.jpg"
+        "5": "https://rawgit.com/actarian/shaders/master/fader/fader-mask.jpg",
+        "6": "https://rawgit.com/actarian/shaders/master/bertazzoni/pic-01.jpg",
+        "7": "https://rawgit.com/actarian/shaders/master/bertazzoni/pic-02.jpg"
     },
     "glsl-canvas.uniforms": {
         "u_pow": [
